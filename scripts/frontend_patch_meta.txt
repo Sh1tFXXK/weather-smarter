@@ -1,0 +1,1429 @@
+PATCH 269 2026-03-18T14:07:20.799Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-      header {
+-        padding: 0;
+-      }
+-
+       .frame {
+---
+PATCH 318 2026-03-18T14:08:21.490Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-      header {
+-        padding: 0;
+-      }
+-
+@@
+---
+PATCH 404 2026-03-19T08:59:28.455Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       .notice {
+         font-size: 12px;
+         color: var(--muted);
+         margin-top: 6px;
+       }
+---
+PATCH 432 2026-03-19T09:00:00.992Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-                <div class="actions">
+-                  <button id="queryBtn">发送决策</button>
+-                  <button id="mockQueryBtn" class="secondary">示例响应</button>
+-                </div>
++                <div class="actions">
+---
+PATCH 438 2026-03-19T09:00:26.566Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-      const pretty = (data) => JSON.stringify(data, null, 2);
++      const pretty = (data) => JSON.stringify(data, null, 2);
++
++      const speechApi = {
++        recognition: null,
+---
+PATCH 444 2026-03-19T09:00:36.948Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+         try {
+           const data = forceMock ? mock.query() : await callWithFallback(runRequest, mock.query);
+           updateDecisionStats(data);
+           updateHealthSummary(state.healthProfile, data.healthAlerts || []);
+           toastResult(qs("queryResult"), mergeTrace(data));
+---
+PATCH 466 2026-03-19T09:01:13.091Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+         try {
+           const data = forceMock ? mock.query() : await callWithFallback(runRequest, mock.query);
+           updateDecisionStats(data);
+           updateHealthSummary(state.healthProfile, data.healthAlerts || []);
+           updateWall(data);
+---
+PATCH 472 2026-03-19T09:01:21.708Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-          toastWall({ service: "query", data: mergeTrace(data) });
++          toastWall({ service: "query", data: mergeTrace(data) });
++          speechApi.lastDecisionText = getDecisionSpeechText(data);
++          if (!forceMock && speechApi.autoSpeak) {
++            speakText(speechApi.lastDecisionText);
+---
+PATCH 478 2026-03-19T09:01:38.256Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       qs("queryBtn").dataset.label = "å‘é€å†³ç­?";
+       qs("mockQueryBtn").dataset.label = "ç¤ºä¾‹å“åº”";
++      qs("voiceStartBtn").dataset.label = "语音输入";
++      qs("voiceStopBtn").dataset.label = "停止录音";
++      qs("voiceSpeakBtn").dataset.label = "播报结果";
+---
+PATCH 502 2026-03-19T09:02:17.890Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       qs("saveProfileBtn").dataset.label = "ä¿å­˜æ¡£æ¡ˆ";
+       qs("clearProfileBtn").dataset.label = "åˆ é™¤æ¡£æ¡ˆ";
+       qs("stocksBtn").dataset.label = "ç”Ÿæˆåˆ†æž";
+       qs("mockStocksBtn").dataset.label = "æ¨¡æ‹Ÿåˆ†æž";
++      qs("voiceStartBtn").dataset.label = "语音输入";
+---
+PATCH 508 2026-03-19T09:02:33.159Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-      qs("queryBtn").addEventListener("click", () => callQuery(false));
+-      qs("mockQueryBtn").addEventListener("click", () => callQuery(true));
++      qs("voiceStartBtn").dataset.label = "语音输入";
++      qs("voiceStopBtn").dataset.label = "停止录音";
++      qs("voiceSpeakBtn").dataset.label = "播报结果";
+---
+PATCH 525 2026-03-19T09:04:07.373Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       const init = () => {
+         bindPills("scenarioPills");
+         bindPills("conditionPills");
+         renderScenes();
+         updateHealthSummary(null, []);
+---
+PATCH 531 2026-03-19T09:04:18.196Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-        updateWall(mock.query());
++        updateWall(mock.query());
++        if (!speechApi.supportedAsr && !speechApi.supportedTts) {
++          setVoiceStatus("当前浏览器不支持 ASR/TTS");
++        } else if (!speechApi.supportedAsr) {
+---
+PATCH 579 2026-03-19T09:12:44.998Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+               <div class="cap-actions">
+                 <button id="wallRunAllBtn">å…¨é“¾è·¯æ‰§è¡?/button>
+                 <button id="wallQueryBtn">å†³ç­– Query</button>
++                <button id="wallVoiceStartBtn" class="secondary">语音输入</button>
++                <button id="wallVoiceStopBtn" class="secondary">停止录音</button>
+---
+PATCH 591 2026-03-19T09:13:05.106Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+               <div class="cap-actions">
+                 <button id="wallRunAllBtn">å…¨é“¾è·¯æ‰§è¡?/button>
+                 <button id="wallQueryBtn">å†³ç­– Query</button>
++                <button id="wallVoiceStartBtn" class="secondary">语音输入</button>
++                <button id="wallVoiceStopBtn" class="secondary">停止录音</button>
+---
+PATCH 597 2026-03-19T09:13:14.422Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-                <button id="wallQueryBtn">å†³ç­– Query</button>
++                <button id="wallQueryBtn">å†³ç­– Query</button>
++                <button id="wallVoiceStartBtn" class="secondary">语音输入</button>
++                <button id="wallVoiceStopBtn" class="secondary">停止录音</button>
++                <button id="wallVoiceSpeakBtn" class="secondary">播报结果</button>
+---
+PATCH 604 2026-03-19T09:13:31.096Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-                <button id="wallQueryBtn">决策 Query</button>
++                <button id="wallQueryBtn">决策 Query</button>
++                <button id="wallVoiceStartBtn" class="secondary">语音输入</button>
++                <button id="wallVoiceStopBtn" class="secondary">停止录音</button>
++                <button id="wallVoiceSpeakBtn" class="secondary">播报结果</button>
+---
+PATCH 610 2026-03-19T09:13:44.391Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       const setVoiceStatus = (text) => {
+-        const el = qs("voiceStatus");
+-        if (el) el.textContent = `语音状态：${text}`;
++        const ids = ["voiceStatus", "wallVoiceStatus"];
++        ids.forEach((id) => {
+---
+PATCH 720 2026-03-19T11:39:04.644Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-      const speechApi = {
+-        recognition: null,
+-        listening: false,
+-        supportedAsr: Boolean(window.SpeechRecognition || window.webkitSpeechRecognition),
+-        supportedTts: Boolean(window.speechSynthesis && window.SpeechSynthesisUtterance),
+---
+PATCH 727 2026-03-19T11:40:07.712Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-      const speechApi = {
+-        recognition: null,
+-        listening: false,
+-        supportedAsr: Boolean(window.SpeechRecognition || window.webkitSpeechRecognition),
+-        supportedTts: Boolean(window.speechSynthesis && window.SpeechSynthesisUtterance),
+---
+PATCH 738 2026-03-19T11:42:08.934Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-      const pretty = (data) => JSON.stringify(data, null, 2);
+-
+-      const speechApi = {
+-        recognition: null,
+-        listening: false,
+---
+PATCH 752 2026-03-19T11:43:39.094Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       const stopVoiceInput = () => {
+         if (speechApi.recognition && speechApi.listening) {
+           speechApi.recognition.stop();
+           setVoiceStatus("å·²åœæ­¢ç›‘å?");
+         }
+---
+PATCH 787 2026-03-19T11:58:53.403Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       .wall-meta {
+-        display: flex;
+-        gap: 8px;
+-        flex-wrap: wrap;
++        display: grid;
+---
+PATCH 844 2026-03-19T12:07:20.805Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       .wall-grid {
+         display: grid;
+         grid-template-columns: repeat(4, 1fr);
+         gap: 8px;
+         margin-top: 0;
+---
+PATCH 882 2026-03-19T12:07:55.765Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       .wall-grid {
+         display: grid;
+         grid-template-columns: repeat(4, 1fr);
+         gap: 8px;
+         margin-top: 0;
+---
+PATCH 900 2026-03-19T12:08:15.756Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-            <div class="wall-card">
++            <div class="wall-card" style="grid-column: span 2;">
+               <div class="wall-title">健康提醒</div>
+               <div class="wall-value" id="wallHealth">风湿关注</div>
+               <div class="wall-sub">湿冷触发关节保暖</div>
+---
+PATCH 917 2026-03-19T12:11:56.466Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-            <div class="wall-card" style="grid-column: span 2;">
++            <div class="wall-card">
+               <div class="wall-title">健康提醒</div>
+               <div class="wall-value" id="wallHealth">风湿关注</div>
+               <div class="wall-sub">湿冷触发关节保暖</div>
+---
+PATCH 951 2026-03-19T14:39:54.011Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       .cap-actions {
+         display: grid;
+         grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+         gap: 8px;
+       }
+---
+PATCH 957 2026-03-19T14:40:12.650Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+               <div class="cap-actions">
+                 <button id="wallRunAllBtn">全链路执行</button>
+-                <button id="wallQueryBtn">决策 Query</button>
+-                <button id="wallVoiceStartBtn" class="secondary">语音输入</button>
+-                <button id="wallVoiceStopBtn" class="secondary">停止录音</button>
+---
+PATCH 963 2026-03-19T14:40:39.810Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       const runWallAll = async () => {
+         const btn = qs("wallRunAllBtn");
+         if (btn) setBusy(btn, true);
+         try {
+@@
+---
+PATCH 1199 2026-03-19T15:35:40.281Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+                 <textarea id="healthNote" placeholder="例如：湿冷敏感、冬天关节疼痛"></textarea>
+                 <div class="actions">
+                   <button id="saveProfileBtn">保存档案</button>
++                  <button id="analyzeProfileBtn" class="secondary">分析画像</button>
+                   <button id="clearProfileBtn" class="secondary">删除档案</button>
+---
+PATCH 1205 2026-03-19T15:35:54.927Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       const updateHealthSummary = (profile, alerts = []) => {
+         const target = qs("healthSummary");
+         target.innerHTML = "";
+@@
+           target.appendChild(empty);
+---
+PATCH 1219 2026-03-19T15:36:14.075Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+                     <option value="health-load">Health Load</option>
+                     <option value="health-delete">Health Delete</option>
+                     <option value="health-alerts">Health Alerts</option>
++                    <option value="profile-analysis">Profile Analysis</option>
+                     <option value="memory">Memory</option>
+---
+PATCH 1223 2026-03-19T15:36:21.896Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+         if (action === "health-load") return runHealthProfileLoad();
+         if (action === "health-delete") return runHealthProfileDelete();
+         if (action === "health-alerts") return runHealthAlerts();
++        if (action === "profile-analysis") return runProfileAnalysis();
+         if (action === "memory") return callMemory("fetch", false);
+---
+PATCH 1227 2026-03-19T15:36:31.278Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       qs("saveProfileBtn").dataset.label = "保存档案";
++      qs("analyzeProfileBtn").dataset.label = "分析画像";
+       qs("clearProfileBtn").dataset.label = "删除档案";
+@@
+       qs("saveProfileBtn").addEventListener("click", saveProfile);
+---
+PATCH 1233 2026-03-19T15:36:38.305Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       const renderSceneGrid = () => {
+         const container = qs("sceneGrid");
+         if (!container) return;
+@@
+         });
+---
+PATCH 1239 2026-03-19T15:36:46.935Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       const runProfileAnalysis = async () => {
+         const userId = qs("healthUser")?.value.trim() || wallInputs().userId;
+         const response = await fetch(`/api/v1/profile/analyze/${encodeURIComponent(userId)}`);
+         const data = await safeJson(response);
+         updateProfileSummary(data);
+---
+PATCH 1319 2026-03-19T15:52:08.732Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       const updateProfileSummary = (profile) => {
+         const target = qs("profileSummary");
+         if (!target) return;
+         target.innerHTML = "";
+@@
+---
+PATCH 1501 2026-03-19T16:00:33.691Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-              <div class="wall-sub">空气湿度 82%</div>
++              <div class="wall-sub">湿度 82%</div>
+@@
+-              <div class="wall-sub">主要污染 PM2.5</div>
++              <div class="wall-sub">PM2.5</div>
+---
+PATCH 1507 2026-03-19T16:00:44.358Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       .cap-inline select,
+       .cap-voice button {
+         min-width: 0;
+       }
++
+---
+PATCH 1532 2026-03-19T16:03:08.062Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       .chart-card {
+         padding: 10px;
+       }
++
++      .wall-card,
+---
+PATCH 1547 2026-03-19T16:04:12.691Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       .wall-title,
+       .chart-title,
+       .cap-title,
+       .step-title,
+       .health-card h4 {
+---
+PATCH 1567 2026-03-19T16:04:42.083Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       .wall-sub,
+       .wall-value {
+         white-space: nowrap;
+         overflow: hidden;
+         text-overflow: ellipsis;
+---
+PATCH 1610 2026-03-20T10:59:06.583Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       .gauge-value {
+         font-size: 24px;
+       }
++
++      .console-intro {
+---
+PATCH 1616 2026-03-20T10:59:19.980Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-        <div style="margin-bottom: 8px; padding: 4px 8px;">
++        <div class="console-intro">
+           <p style="margin: 0 0 1px; font-size: 10px; color: var(--muted);">Weather Smarter Console</p>
+           <h2 style="margin: 0 0 1px; font-size: 13px; font-weight: 600;">环境驱动决策平台控制台</h2>
+           <p style="margin: 0; font-size: 10px; color: var(--muted); line-height: 1.2;">把天气、健康、任务、记忆、RAG 与 LLM 统一进一条可执行链路。</p>
+---
+PATCH 1636 2026-03-20T10:59:50.894Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-        <div style="margin-bottom: 8px; padding: 4px 8px;">
++        <div class="console-intro">
+*** End Patch
+---
+PATCH 1654 2026-03-20T11:00:24.299Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-          <div>
++          <div class="console-intro">
+             <p style="margin: 0 0 1px; font-size: 10px; color: var(--muted);">Weather Smarter Console</p>
+             <h2 style="margin: 0 0 1px; font-size: 13px; font-weight: 600;">环境驱动决策平台控制台</h2>
+             <p style="margin: 0; font-size: 10px; color: var(--muted); line-height: 1.2;">把天气、健康、任务、记忆、RAG 与 LLM 统一进一条可执行链路。</p>
+---
+PATCH 1660 2026-03-20T11:00:33.735Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-              <div class="wall-meta" style="margin-top: 0px;">
+-                <span class="tag" id="wallCity">上海</span>
+-                <span class="tag" id="wallTime">2026-03-16 07:00</span>
+-                <span class="tag" id="wallStatus">小雨</span>
+-                <span class="tag" id="wallMode">Auto</span>
+---
+PATCH 1674 2026-03-20T11:00:54.903Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-          <div class="wall-meta" style="margin-top: 0px;">
+-            <span class="tag" id="wallCity">上海</span>
+-            <span class="tag" id="wallTime">2026-03-16 06:50</span>
+-            <span class="tag" id="wallStatus">小雨</span>
+-            <span class="tag" id="wallMode">Auto</span>
+---
+PATCH 1706 2026-03-20T11:55:26.539Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+             <div class="wall-card">
+               <div class="wall-title">健康提醒</div>
+               <div class="wall-value" id="wallHealth">风湿关注</div>
+               <div class="wall-sub">湿冷注意保暖</div>
+             </div>
+---
+PATCH 1718 2026-03-20T11:55:54.032Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+         qs("wallStatus").textContent = weather.status || "小雨";
+         qs("wallTemp").textContent = `${weather.feelsLike ?? 10.8}℃`;
+         qs("wallAqi").textContent = weather.aqi ?? 68;
++        qs("wallRainProb").textContent = `${Math.round((weather.precipitation ?? 1.2) * 50)}%`;
++        qs("wallWind").textContent = weather.windPower || "4级";
+---
+PATCH 1724 2026-03-20T11:56:02.853Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-              <div class="wall-sub">短时阵雨</div>
++              <div class="wall-sub" id="wallRainText">短时阵雨</div>
+@@
+-              <div class="wall-sub">东风</div>
++              <div class="wall-sub" id="wallWindText">东风</div>
+---
+PATCH 1728 2026-03-20T11:56:14.557Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+         qs("wallTemp").textContent = `${weather.feelsLike ?? 10.8}℃`;
+         qs("wallAqi").textContent = weather.aqi ?? 68;
+         qs("wallRainProb").textContent = `${Math.round((weather.precipitation ?? 1.2) * 50)}%`;
+         qs("wallWind").textContent = weather.windPower || "4级";
++        qs("wallRainText").textContent = (weather.precipitation ?? 1.2) > 1 ? "短时阵雨" : "降水较弱";
+---
+PATCH 1760 2026-03-20T11:59:21.392Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       .gauge-value {
+         font-size: 24px;
+       }
+@@
+       .console-intro .wall-meta {
+---
+PATCH 1772 2026-03-20T11:59:40.871Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       .gauge-value {
+         font-size: 24px;
+       }
++
++      .screen,
+---
+PATCH 1778 2026-03-20T11:59:50.759Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       .wall-charts {
+         gap: 6px;
+         margin-top: 6px;
+       }
+ 
+---
+PATCH 1914 2026-03-20T12:29:37.322Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       .cap-timeline {
+         max-height: 118px;
+         overflow: auto;
+       }
++
+---
+PATCH 1920 2026-03-20T12:29:58.722Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+           <section class="story-step" id="scenes">
+             <div class="step-head">
+               <div>
+                 <div class="step-title">Scenario Library</div>
+                 <div class="step-sub">统一场景知识映射</div>
+---
+PATCH 1934 2026-03-20T12:40:33.281Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       qs("wallRunAllBtn").addEventListener("click", runWallAll);
+       qs("wallQuickRunBtn").addEventListener("click", async () => {
+         try {
+           await runWallQuickAction();
+         } catch (err) {
+---
+PATCH 1960 2026-03-20T12:42:17.033Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       .fun-actions {
+         display: grid;
+         grid-template-columns: repeat(2, minmax(0, 1fr));
+         gap: 8px;
+       }
+---
+PATCH 1972 2026-03-20T12:42:58.971Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-        <div class="storyline">
++        <div class="dashboard-shell">
++        <div class="dashboard-main">
++        <div class="storyline">
+@@
+---
+PATCH 1978 2026-03-20T12:43:07.724Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       .dashboard-main {
+         min-width: 0;
+         overflow: auto;
+         padding-right: 2px;
+       }
+---
+PATCH 2002 2026-03-20T12:53:26.293Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       .fun-actions {
+         display: grid;
+         grid-template-columns: repeat(2, minmax(0, 1fr));
+         gap: 8px;
+       }
+---
+PATCH 2008 2026-03-20T12:54:07.328Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+               <div class="cap-actions">
+                 <button id="wallRunAllBtn">全链路执行</button>
+                 <div class="cap-inline">
+-                  <select id="wallQuickAction">
+-                    <option value="query">决策 Query</option>
+---
+PATCH 2014 2026-03-20T12:54:28.012Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       const updateFunLab = (mode) => {
+         const pulse = `${72 + Math.round(Math.random() * 18)}%`;
+         const heat = `${(3.2 + Math.random() * 2.4).toFixed(1)}x`;
+         const memoryCount = String((state.queryRuns || 0) + 6).padStart(2, "0");
+@@
+---
+PATCH 2030 2026-03-20T13:06:17.749Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       .action-chip {
+         border-radius: 12px;
+         border: 1px solid rgba(148, 163, 184, 0.2);
+         background:
+           linear-gradient(180deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.9));
+---
+PATCH 2036 2026-03-20T13:07:15.608Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+               <div class="cap-actions">
+                 <button id="wallRunAllBtn">全链路执行</button>
+                 <div class="cap-inline">
+                   <input id="wallQuickAction" type="hidden" value="query" />
+                   <button id="wallQuickRunBtn" class="secondary">执行所选</button>
+---
+PATCH 2042 2026-03-20T13:07:49.101Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       const syncActionDeck = (action) => {
+         const input = qs("wallQuickAction");
+         if (input) input.value = action;
+         document.querySelectorAll("#actionDeck .action-chip").forEach((node) => {
+           node.classList.toggle("active", node.dataset.action === action);
+---
+PATCH 2066 2026-03-20T13:09:23.454Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       .dashboard-main .storyline {
+         display: flex;
+         flex-direction: column;
+         gap: 8px;
+         height: auto;
+---
+PATCH 2072 2026-03-20T13:09:51.013Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       .chain-builder {
+         display: grid;
+         grid-template-columns: repeat(4, minmax(0, 1fr));
+         gap: 8px;
++        position: relative;
+---
+PATCH 2078 2026-03-20T13:10:04.454Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+             </div>
+             <div class="radar-board" id="abilityRadar">
++              <div class="radar-ring"></div>
++              <div class="radar-ring inner"></div>
++              <div class="radar-sweep"></div>
+---
+PATCH 2084 2026-03-20T13:10:19.545Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       const renderChain = () => {
+         document.querySelectorAll("#chainBuilder .chain-slot").forEach((node, index) => {
+           const value = chainState[index];
+           node.textContent = value || `拖入能力 ${index + 1}`;
+           node.classList.toggle("filled", Boolean(value));
+---
+PATCH 2126 2026-03-20T13:12:31.769Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       .fun-actions {
+         display: grid;
+         grid-template-columns: repeat(2, minmax(0, 1fr));
+         gap: 8px;
+       }
+---
+PATCH 2132 2026-03-20T13:12:49.058Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+           <div class="wall-charts">
+             <div class="chart-card">
+               <div class="chart-title">降水强度</div>
++              <div class="chart-metric">
++                <div class="chart-value" id="rainChartValue">1.2mm/h</div>
+---
+PATCH 2138 2026-03-20T13:13:01.514Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       const updateGauge = (value) => {
+         const arc = qs("aqiGaugeArc");
+         const label = qs("aqiGaugeValue");
+         if (!arc || !label) return;
+         const clamped = Math.max(0, Math.min(200, value));
+---
+PATCH 2142 2026-03-20T13:13:15.475Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+         qs("wallRainProb").textContent = `${Math.round((weather.precipitation ?? 1.2) * 50)}%`;
+         qs("wallWind").textContent = weather.windPower || "4级";
+         qs("wallRainText").textContent = (weather.precipitation ?? 1.2) > 1 ? "短时阵雨" : "降水较弱";
+         qs("wallWindText").textContent = weather.windDirection || "东风";
++        if (qs("rainChartValue")) qs("rainChartValue").textContent = `${(weather.precipitation ?? 1.2).toFixed(1)}mm/h`;
+---
+PATCH 2166 2026-03-20T13:17:31.678Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       .chart-metric {
+         display: flex;
+         align-items: baseline;
+         justify-content: space-between;
+         gap: 8px;
+---
+PATCH 2172 2026-03-20T13:17:52.603Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+           <div class="wall-charts">
+             <div class="chart-card">
+               <div class="chart-title">降水强度</div>
+-              <div class="chart-metric">
+-                <div class="chart-value" id="rainChartValue">1.2mm/h</div>
+---
+PATCH 2178 2026-03-20T13:18:17.879Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-      const drawLineChart = (canvasId, points, color) => {
++      const drawLineChart = (canvasId, points, color, areaColor) => {
+         const canvas = qs(canvasId);
+         if (!canvas) return;
+         const ctx = canvas.getContext("2d");
+---
+PATCH 2190 2026-03-20T13:18:39.229Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+         if (qs("aqiCardValue")) qs("aqiCardValue").textContent = clamped;
+         if (qs("aqiCardSub")) qs("aqiCardSub").textContent = clamped <= 50 ? "优，颗粒低" : clamped <= 100 ? "良，PM2.5" : "偏高，注意防护";
++        if (qs("aqiChartTrend")) {
++          qs("aqiChartTrend").className = `chart-trend ${clamped > 90 ? "up" : "down"}`;
++          qs("aqiChartTrend").innerHTML = clamped > 90 ? "<strong>↑ 12</strong>污染抬升" : "<strong>↘ 6</strong>波动平稳";
+---
+PATCH 2194 2026-03-20T13:18:57.268Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+         if (qs("rainChartValue")) qs("rainChartValue").textContent = `${(weather.precipitation ?? 1.2).toFixed(1)}mm/h`;
+         if (qs("rainChartSub")) qs("rainChartSub").textContent = (weather.precipitation ?? 1.2) > 1 ? "短时阵雨" : "降水较弱";
++        if (qs("rainChartTrend")) {
++          const rainHeavy = (weather.precipitation ?? 1.2) > 1;
++          qs("rainChartTrend").className = `chart-trend ${rainHeavy ? "down" : "up"}`;
+---
+PATCH 2220 2026-03-20T13:20:32.323Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+               <div class="gauge" id="aqiGauge">
+                 <svg viewBox="0 0 120 120">
+-                  <circle cx="60" cy="60" r="46" stroke="rgba(148,163,184,0.25)" stroke-width="10" fill="none" />
+-                  <circle cx="60" cy="60" r="46" stroke="url(#gaugeGradient)" stroke-width="10" fill="none" stroke-linecap="round" stroke-dasharray="0 999" id="aqiGaugeArc" />
++                  <path d="M 14 60 A 46 46 0 0 1 106 60" stroke="rgba(148,163,184,0.18)" stroke-width="10" fill="none" stroke-linecap="round" />
+---
+PATCH 2226 2026-03-20T13:21:10.742Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-      const drawLineChart = (canvasId, points, color) => {
++      const drawLineChart = (canvasId, points, color, options = {}) => {
+         const canvas = qs(canvasId);
+         if (!canvas) return;
+         const ctx = canvas.getContext("2d");
+---
+PATCH 2250 2026-03-20T13:22:24.583Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       .chart-trend.up strong {
+         color: #22c55e;
+       }
+ 
+       .chart-mini {
+---
+PATCH 2256 2026-03-20T13:22:42.457Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+             <div class="chart-card">
+               <div class="chart-title">降水强度</div>
+               <div class="chart-head">
+@@
+                 <div class="chart-trend down" id="rainChartTrend">
+---
+PATCH 2262 2026-03-20T13:23:06.201Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-      const drawLineChart = (canvasId, points, color, options = {}) => {
++      const drawLineChart = (canvasId, points, color, options = {}) => {
+         const canvas = qs(canvasId);
+         if (!canvas) return;
+         const ctx = canvas.getContext("2d");
+---
+PATCH 2286 2026-03-20T13:24:17.689Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       .gauge-scale {
+         display: flex;
+         justify-content: space-between;
+         margin-top: 6px;
+         font-size: 9px;
+---
+PATCH 2292 2026-03-20T13:24:27.356Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+                 <svg viewBox="0 0 120 120">
+@@
+                   </defs>
+                 </svg>
++                <div class="gauge-needle" id="aqiGaugeNeedle"></div>
+---
+PATCH 2298 2026-03-20T13:25:05.226Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       const updateGauge = (value) => {
+         const arc = qs("aqiGaugeArc");
+         const label = qs("aqiGaugeValue");
++        const needle = qs("aqiGaugeNeedle");
++        const gauge = qs("aqiGauge");
+---
+PATCH 2304 2026-03-20T13:25:26.534Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-      const updateGauge = (value) => {
+-        const arc = qs("aqiGaugeArc");
+-        const label = qs("aqiGaugeValue");
+-        if (!arc || !label) return;
+-        const clamped = Math.max(0, Math.min(200, value));
+---
+PATCH 2316 2026-03-20T13:26:22.634Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-        if (qs("trafficChartValue")) qs("trafficChartValue").textContent = data?.decision?.riskLevel === "high" ? "42%" : data?.decision?.riskLevel === "low" ? "74%" : "58%";
++        if (qs("trafficChartValue")) animateNumber(qs("trafficChartValue"), data?.decision?.riskLevel === "high" ? 42 : data?.decision?.riskLevel === "low" ? 74 : 58, "%");
+*** End Patch
+---
+PATCH 2332 2026-03-20T13:28:53.898Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       .gauge-needle {
+         position: absolute;
+         left: 50%;
+         top: 50%;
+         width: 38px;
+---
+PATCH 2338 2026-03-20T13:29:36.692Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+               <div class="gauge" id="aqiGauge">
+                 <svg viewBox="0 0 120 120">
+@@
+                   </defs>
+                 </svg>
+---
+PATCH 2344 2026-03-20T13:30:18.201Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       const animateNumber = (el, target, suffix = "") => {
+         if (!el) return;
+         const current = Number(String(el.textContent || "0").replace(/[^\d.-]/g, "")) || 0;
+@@
+         };
+---
+PATCH 2350 2026-03-20T13:30:32.356Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       const animateNumber = (el, target, suffix = "") => {
+         if (!el) return;
+         const current = Number(String(el.textContent || "0").replace(/[^\d.-]/g, "")) || 0;
+@@
+         };
+---
+PATCH 2362 2026-03-20T13:31:37.988Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-        if (options.tooltipId) {
+-          canvas.onmousemove = (event) => {
+-            const rect = canvas.getBoundingClientRect();
+-            const x = event.clientX - rect.left;
+-            const index = Math.max(0, Math.min(points.length - 1, Math.round((x / rect.width) * (points.length - 1))));
+---
+PATCH 2368 2026-03-20T13:32:07.662Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-      const animateCharts = () => {
+-        const rain = [0.2, 0.35, 0.6, 0.55, 0.4, 0.3, 0.2];
+-        const traffic = [0.7, 0.65, 0.6, 0.5, 0.52, 0.48, 0.45];
+-        const trafficForecast = [0.74, 0.7, 0.66, 0.61, 0.58, 0.55, 0.53];
+-        drawLineChart("rainChart", rain, "rgba(56,189,248,0.95)", {
+---
+PATCH 2402 2026-03-20T13:36:20.467Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       .side-panel.fill {
+         flex: 1;
+         min-height: 0;
+       }
++
+---
+PATCH 2408 2026-03-20T13:36:53.816Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+               <div class="quick-input">
+                 <label for="wallQueryText">统一问题入口</label>
+                 <textarea id="wallQueryText">明早 7 点在上海骑行通勤，要带雨衣吗？</textarea>
+               </div>
+-              <div class="cap-controls">
+---
+PATCH 2414 2026-03-20T13:37:37.742Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+           <div class="side-panel fill">
+             <div class="step-head" style="margin-bottom: 8px;">
+               <div>
+                 <div class="step-title">Fun Lab</div>
+                 <div class="step-sub">炫酷交互实验舱</div>
+---
+PATCH 2438 2026-03-20T13:40:58.519Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+           <div class="side-panel fill">
+             <div class="step-head" style="margin-bottom: 8px;">
+               <div>
+-                <div class="step-title">Fun Lab</div>
+-                <div class="step-sub">炫酷交互实验舱</div>
+---
+PATCH 2444 2026-03-20T13:41:42.423Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+                 <div class="action-deck" id="actionDeck">
+                   <div class="action-chip active" data-action="query" draggable="true"><div class="action-chip-title">决策 Query</div><div class="action-chip-sub">统一入口</div></div>
+                   <div class="action-chip" data-action="weather" draggable="true"><div class="action-chip-title">Weather</div><div class="action-chip-sub">即时天气</div></div>
+                   <div class="action-chip" data-action="forecast" draggable="true"><div class="action-chip-title">Forecast</div><div class="action-chip-sub">趋势预报</div></div>
+                   <div class="action-chip" data-action="aqi" draggable="true"><div class="action-chip-title">AQI</div><div class="action-chip-sub">空气质量</div></div>
+---
+PATCH 2468 2026-03-20T13:45:22.539Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-          <div class="side-panel">
+-            <div class="step-head" style="margin-bottom: 8px;">
+-              <div>
+-                <div class="step-title">Ability Radar</div>
+-                <div class="step-sub">环形能力节点</div>
+---
+PATCH 2482 2026-03-20T13:46:06.016Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-      .radar-board {
+-        position: relative;
+-        height: 280px;
+-        border-radius: 18px;
+-        border: 1px solid rgba(148, 163, 184, 0.18);
+---
+PATCH 2488 2026-03-20T13:46:27.320Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       const syncActionDeck = (action) => {
+         const input = qs("wallQuickAction");
+         if (input) input.value = action;
+         document.querySelectorAll("#actionDeck .action-chip").forEach((node) => {
+           node.classList.toggle("active", node.dataset.action === action);
+---
+PATCH 2512 2026-03-20T13:49:58.266Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       .side-block + .side-block {
+         margin-top: 10px;
+       }
+ 
+       .side-block h4 {
+---
+PATCH 2518 2026-03-20T13:50:20.225Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+           <div class="side-panel fill">
+             <div class="step-head" style="margin-bottom: 8px;">
+               <div>
+                 <div class="step-title">Advanced Console</div>
+                 <div class="step-sub">高级编排与参数控制</div>
+---
+USER 2554 2026-03-20T13:52:08.679Z 精简压缩
+PATCH 2568 2026-03-20T13:53:20.308Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-          <section class="story-step" id="weather">
+-            <div class="step-head">
+-              <div>
+-                <div class="step-title">Data Intake</div>
+-                <div class="step-sub">环境数据输入/代理</div>
+---
+PATCH 2616 2026-03-20T13:54:53.795Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       .dashboard-side .cap-voice {
+         margin-top: 6px;
+       }
++
++      #memory,
+---
+PATCH 2622 2026-03-20T13:55:04.421Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       const qs = (id) => document.getElementById(id);
++      const bindClick = (id, handler) => {
++        const node = qs(id);
++        if (node) node.addEventListener("click", handler);
++      };
+---
+PATCH 2701 2026-03-20T13:56:56.879Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-      const pretty = (data) => JSON.stringify(data, null, 2);
++      const bindClick = (id, handler) => {
++        const node = qs(id);
++        if (node) node.addEventListener("click", handler);
++      };
+---
+PATCH 2705 2026-03-20T13:57:13.588Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-      qs("queryBtn").dataset.label = "发送决策";
+-      qs("mockQueryBtn").dataset.label = "示例响应";
+-      qs("weatherBtn").dataset.label = "查询";
+-      qs("mockWeatherBtn").dataset.label = "模拟天气";
+-      qs("memoryFetchBtn").dataset.label = "读取记忆";
+---
+PATCH 2709 2026-03-20T13:57:38.249Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-      qs("queryBtn").addEventListener("click", () => callQuery(false));
+-      qs("mockQueryBtn").addEventListener("click", () => callQuery(true));
+-      qs("voiceStartBtn").addEventListener("click", startVoiceInput);
+-      qs("voiceStopBtn").addEventListener("click", stopVoiceInput);
+-      qs("voiceSpeakBtn").addEventListener("click", () => {
+---
+PATCH 2722 2026-03-20T13:58:13.758Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-      qs("voiceStartBtn").dataset.label = "语音输入";
+-      qs("voiceStopBtn").dataset.label = "停止录音";
+-      qs("voiceSpeakBtn").dataset.label = "播报结果";
+-      qs("wallVoiceStartBtn").dataset.label = "语音输入";
+-      qs("wallVoiceStopBtn").dataset.label = "停止录音";
+---
+USER 2741 2026-03-20T14:06:51.542Z 真正的瘦身版
+PATCH 2765 2026-03-20T14:07:32.222Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-      #memory,
+-      #forecast,
+-      #stocks,
+-      #tasks,
+-      #rag,
+---
+PATCH 2769 2026-03-20T14:08:14.715Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-          <section class="story-step" id="memory">
+-            <div class="step-head">
+-              <div>
+-                <div class="step-title">Context Memory</div>
+-                <div class="step-sub">会话记忆回溯与清理</div>
+---
+PATCH 2782 2026-03-20T14:08:44.077Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-          <section class="story-step" id="memory">
++          <!-- deprecated-secondary-sections-start
++          <section class="story-step" id="memory">
+@@
+-          <section class="story-step" id="scenes">
+---
+PATCH 2788 2026-03-20T14:08:59.885Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-        renderScenes();
+         updateHealthSummary(null, []);
+         updateWall(mock.query());
+@@
+-      setLabel("memoryFetchBtn", "读取记忆");
+---
+PATCH 2794 2026-03-20T14:09:19.982Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-        if (qs("memorySession")) qs("memorySession").value = wall.sessionId;
+-        if (qs("weatherCity")) qs("weatherCity").value = wall.city;
+-        if (qs("weatherAdcode")) qs("weatherAdcode").value = wall.adcode;
+-        if (qs("forecastLat")) qs("forecastLat").value = wall.lat;
+-        if (qs("forecastLon")) qs("forecastLon").value = wall.lon;
+---
+PATCH 2806 2026-03-20T14:09:39.493Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-        if (qs("memorySession")) qs("memorySession").value = wall.sessionId;
+-        if (qs("forecastLat")) qs("forecastLat").value = wall.lat;
+-        if (qs("forecastLon")) qs("forecastLon").value = wall.lon;
+-        if (qs("aqiLat")) qs("aqiLat").value = wall.lat;
+-        if (qs("aqiLon")) qs("aqiLon").value = wall.lon;
+---
+USER 2826 2026-03-20T14:10:37.505Z 彻底干净的最终版
+PATCH 2842 2026-03-20T14:11:17.517Z
+*** Begin Patch
+*** Delete File: E:\project\weather-smarter\frontend\index.html
+*** End Patch
+---
+PATCH 2848 2026-03-20T14:16:47.843Z
+*** Begin Patch
+*** Add File: E:\project\weather-smarter\frontend\index.html
++<!DOCTYPE html>
++<html lang="zh-CN">
++  <head>
++    <meta charset="UTF-8" />
++    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
++    <title>Weather Smarter Console</title>
+---
+PATCH 2855 2026-03-20T14:19:11.671Z
+*** Begin Patch
+*** Add File: E:\project\weather-smarter\frontend\index.html
++<!DOCTYPE html>
++<html lang="zh-CN">
++  <head>
++    <meta charset="UTF-8" />
++    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
++    <title>Weather Smarter Console</title>
+---
+PATCH 2861 2026-03-20T14:21:33.907Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-    <script>
+-      const qs = (id) => document.getElementById(id);
+-      const qsa = (selector, root = document) => Array.from(root.querySelectorAll(selector));
+-    </script>
++    <script>
+---
+PATCH 2876 2026-03-20T14:26:58.489Z
+*** Begin Patch
+*** Delete File: E:\project\weather-smarter\frontend\index.html
+*** Add File: E:\project\weather-smarter\frontend\index.html
++<!doctype html>
++<html lang="zh-CN">
++  <head>
++    <meta charset="UTF-8" />
++    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+---
+PATCH 2892 2026-03-20T14:27:20.915Z
+*** Begin Patch
+*** Delete File: E:\project\weather-smarter\frontend\index.html
+*** End Patch
+---
+PATCH 2898 2026-03-20T14:31:20.478Z
+*** Begin Patch
+*** Add File: E:\project\weather-smarter\frontend\index.html
++<!doctype html>
++<html lang="zh-CN">
++  <head>
++    <meta charset="UTF-8" />
++    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
++    <title>Weather Smarter Console</title>
+---
+PATCH 2905 2026-03-20T14:34:39.495Z
+*** Begin Patch
+*** Add File: E:\project\weather-smarter\frontend\index.html
++<!doctype html>
++<html lang="zh-CN">
++<head>
++  <meta charset="UTF-8" />
++  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
++  <title>Weather Smarter Console</title>
+---
+PATCH 2921 2026-03-20T14:37:58.583Z
+*** Begin Patch
+*** Add File: E:\project\weather-smarter\frontend\index.html
++<!doctype html>
++<html lang="zh-CN">
++<head>
++  <meta charset="UTF-8" />
++  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
++  <title>Weather Smarter Console</title>
+---
+PATCH 3234 2026-03-20T14:48:00.768Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       .story-step {
+         padding: 12px 10px 12px;
+         border-top: none;
+         display: none;
+       }
+---
+PATCH 3292 2026-03-20T14:50:03.543Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-    </style>
++      .story-step.story-pane {
++        display: block !important;
++        height: 100%;
++        overflow: hidden;
+---
+PATCH 3298 2026-03-20T14:50:31.950Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-          <section class="story-step" id="wall">
++          <section class="story-step story-pane" id="wall">
+@@
+-          <section class="story-step" id="decision">
+-            <div class="step-head">
+---
+PATCH 3304 2026-03-20T14:50:59.246Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       const init = () => {
+         bindPills("scenarioPills");
+         bindPills("conditionPills");
+         renderScenes();
+         updateHealthSummary(null, []);
+---
+PATCH 3338 2026-03-20T14:52:56.357Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+           <section class="story-step story-pane ops-pane" id="decision">
+             <div class="ops-shell">
+               <div class="ops-card">
+@@
+               </div>
+---
+PATCH 3352 2026-03-20T14:53:34.662Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       const mountOpsPane = () => {
+         const boards = $$(".wall .capability-board");
+         const controlMount = qs("opsControlMount");
+         const timelineMount = qs("opsTimelineMount");
+-        if (!boards.length || !controlMount || !timelineMount) return;
+---
+PATCH 3463 2026-03-20T15:03:11.206Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-    </style>
++      .story-step.story-pane {
++        display: block !important;
++        min-height: 0;
++      }
+---
+PATCH 3469 2026-03-20T15:03:59.388Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-          <section class="story-step" id="wall">
++          <section class="story-step story-pane wall-pane" id="wall">
+@@
+-          <section class="story-step" id="decision">
+-            <div class="step-head">
+---
+PATCH 3475 2026-03-20T15:04:20.900Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-      const init = () => {
++      const mountOpsPane = () => {
++        const boards = $$(".wall .capability-board");
++        const controlMount = qs("opsControlMount");
++        const timelineMount = qs("opsTimelineMount");
+---
+PATCH 3481 2026-03-20T15:04:35.550Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-          <section class="story-step" id="health">
++          <section class="story-step story-hidden" id="health">
+@@
+-          <section class="story-step" id="weather">
++          <section class="story-step story-hidden" id="weather">
+---
+PATCH 3583 2026-03-20T15:12:40.617Z
+*** Begin Patch
+*** Add File: E:\project\weather-smarter\scripts\extract_frontend_patches.py
++import json
++from pathlib import Path
++
++
++SESSION = Path(r"C:\Users\Administrator\.codex\sessions\2026\03\15\rollout-2026-03-15T23-12-16-019cf20e-1ba4-7212-838b-c09221ddc82b.jsonl")
++
+---
+PATCH 3595 2026-03-20T15:13:05.081Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\scripts\extract_frontend_patches.py
+@@
+ def main() -> None:
++    out = Path("scripts/frontend_patches_dump.txt")
++    chunks: list[str] = []
+     count = 0
+     for line in SESSION.read_text(encoding="utf-8").splitlines():
+---
+PATCH 3610 2026-03-20T15:14:25.431Z
+*** Begin Patch
+*** Add File: E:\project\weather-smarter\scripts\replay_frontend_patches.py
++from __future__ import annotations
++
++from pathlib import Path
++
++
++DUMP = Path("scripts/frontend_patches_dump.txt")
+---
+PATCH 3635 2026-03-20T15:15:26.166Z
+*** Begin Patch
+*** Add File: E:\project\weather-smarter\scripts\list_frontend_patch_meta.py
++import json
++from pathlib import Path
++
++
++SESSION = Path(r"C:\Users\Administrator\.codex\sessions\2026\03\18\rollout-2026-03-18T21-37-58-019d012a-da19-7d50-9823-9bb83562ec06.jsonl")
++
+---
+PATCH 3647 2026-03-20T15:15:49.924Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\scripts\list_frontend_patch_meta.py
+@@
+ def main() -> None:
++    lines = []
+     for i, line in enumerate(SESSION.read_text(encoding="utf-8").splitlines(), start=1):
+         try:
+             obj = json.loads(line)
+---

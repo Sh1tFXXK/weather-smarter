@@ -1,0 +1,14 @@
+{"id":"sport_running_ok","title":"跑步适宜条件","content":"温度10-25℃、无降雨、风力<5级、AQI<100时适合户外跑步。","tags":["sport","running"],"domain":"health"}
+{"id":"sport_running_risk","title":"跑步风险条件","content":"高温(>=35℃)、低温(<=0℃)、降雨或空气质量差(AQI>=150)时不建议高强度户外跑步。","tags":["sport","running","risk"],"domain":"health"}
+{"id":"umbrella_basic","title":"雨具携带建议","content":"出现降雨/雷阵雨或降水概率较高时，建议携带雨伞或雨衣。","tags":["umbrella","rain"],"domain":"life"}
+{"id":"clothing_temp","title":"穿衣温度分级","content":"<5℃厚外套；5-15℃外套/薄羽绒；15-25℃长袖或薄外套；>25℃短袖。","tags":["clothing"],"domain":"life"}
+{"id":"uv_protection","title":"紫外线防护","content":"UV指数>=7时建议减少10-14点户外活动，使用SPF30+防晒霜并佩戴帽子/墨镜。","tags":["uv","health"],"domain":"health"}
+{"id":"air_quality_exercise","title":"空气质量与运动","content":"AQI>=150时不建议户外运动；100-150时应降低运动强度。","tags":["aqi","sport"],"domain":"health"}
+{"id":"car_wash","title":"洗车指数","content":"降雨或降水概率较高时不建议洗车；晴朗干燥时适宜洗车。","tags":["car_wash"],"domain":"life"}
+{"id":"travel_wind","title":"大风出行风险","content":"风力>=6级时骑行/高空活动风险上升，注意防风并避免不稳定设施。","tags":["wind","travel"],"domain":"life"}
+{"id":"camping_risk","title":"露营风险提示","content":"降雨、大风或雷暴预警时不建议露营，优先选择室内或延期。","tags":["camping","risk"],"domain":"life"}
+{"id":"construction_wind","title":"施工风险（大风）","content":"风力>=7级时高空作业风险高，建议暂停高空施工。","tags":["construction","wind","risk"],"domain":"industry"}
+{"id":"logistics_rain","title":"物流配送风险（降雨）","content":"降雨导致路面湿滑与视线下降，应适当延长配送时间并加强安全提醒。","tags":["logistics","rain"],"domain":"industry"}
+{"id":"city_event","title":"城市活动安排","content":"高温/暴雨/大风时建议减少大型户外活动，必要时调整场地或时间。","tags":["city","event"],"domain":"city"}
+{"id":"health_heat","title":"高温健康建议","content":"气温>=35℃时注意补水、防晒，避免长时间户外暴晒。","tags":["heat","health"],"domain":"health"}
+{"id":"health_cold","title":"低温健康建议","content":"气温<=0℃时注意保暖，心血管/呼吸系统人群减少室外停留。","tags":["cold","health"],"domain":"health"}

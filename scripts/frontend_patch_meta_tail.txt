@@ -1,0 +1,369 @@
+ <div class="side-panel fill">
+             <div class="step-head" style="margin-bottom: 8px;">
+               <div>
+                 <div class="step-title">Advanced Console</div>
+                 <div class="step-sub">高级编排与参数控制</div>
+---
+USER 2554 2026-03-20T13:52:08.679Z 精简压缩
+PATCH 2568 2026-03-20T13:53:20.308Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-          <section class="story-step" id="weather">
+-            <div class="step-head">
+-              <div>
+-                <div class="step-title">Data Intake</div>
+-                <div class="step-sub">环境数据输入/代理</div>
+---
+PATCH 2616 2026-03-20T13:54:53.795Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       .dashboard-side .cap-voice {
+         margin-top: 6px;
+       }
++
++      #memory,
+---
+PATCH 2622 2026-03-20T13:55:04.421Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       const qs = (id) => document.getElementById(id);
++      const bindClick = (id, handler) => {
++        const node = qs(id);
++        if (node) node.addEventListener("click", handler);
++      };
+---
+PATCH 2701 2026-03-20T13:56:56.879Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-      const pretty = (data) => JSON.stringify(data, null, 2);
++      const bindClick = (id, handler) => {
++        const node = qs(id);
++        if (node) node.addEventListener("click", handler);
++      };
+---
+PATCH 2705 2026-03-20T13:57:13.588Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-      qs("queryBtn").dataset.label = "发送决策";
+-      qs("mockQueryBtn").dataset.label = "示例响应";
+-      qs("weatherBtn").dataset.label = "查询";
+-      qs("mockWeatherBtn").dataset.label = "模拟天气";
+-      qs("memoryFetchBtn").dataset.label = "读取记忆";
+---
+PATCH 2709 2026-03-20T13:57:38.249Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-      qs("queryBtn").addEventListener("click", () => callQuery(false));
+-      qs("mockQueryBtn").addEventListener("click", () => callQuery(true));
+-      qs("voiceStartBtn").addEventListener("click", startVoiceInput);
+-      qs("voiceStopBtn").addEventListener("click", stopVoiceInput);
+-      qs("voiceSpeakBtn").addEventListener("click", () => {
+---
+PATCH 2722 2026-03-20T13:58:13.758Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-      qs("voiceStartBtn").dataset.label = "语音输入";
+-      qs("voiceStopBtn").dataset.label = "停止录音";
+-      qs("voiceSpeakBtn").dataset.label = "播报结果";
+-      qs("wallVoiceStartBtn").dataset.label = "语音输入";
+-      qs("wallVoiceStopBtn").dataset.label = "停止录音";
+---
+USER 2741 2026-03-20T14:06:51.542Z 真正的瘦身版
+PATCH 2765 2026-03-20T14:07:32.222Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-      #memory,
+-      #forecast,
+-      #stocks,
+-      #tasks,
+-      #rag,
+---
+PATCH 2769 2026-03-20T14:08:14.715Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-          <section class="story-step" id="memory">
+-            <div class="step-head">
+-              <div>
+-                <div class="step-title">Context Memory</div>
+-                <div class="step-sub">会话记忆回溯与清理</div>
+---
+PATCH 2782 2026-03-20T14:08:44.077Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-          <section class="story-step" id="memory">
++          <!-- deprecated-secondary-sections-start
++          <section class="story-step" id="memory">
+@@
+-          <section class="story-step" id="scenes">
+---
+PATCH 2788 2026-03-20T14:08:59.885Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-        renderScenes();
+         updateHealthSummary(null, []);
+         updateWall(mock.query());
+@@
+-      setLabel("memoryFetchBtn", "读取记忆");
+---
+PATCH 2794 2026-03-20T14:09:19.982Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-        if (qs("memorySession")) qs("memorySession").value = wall.sessionId;
+-        if (qs("weatherCity")) qs("weatherCity").value = wall.city;
+-        if (qs("weatherAdcode")) qs("weatherAdcode").value = wall.adcode;
+-        if (qs("forecastLat")) qs("forecastLat").value = wall.lat;
+-        if (qs("forecastLon")) qs("forecastLon").value = wall.lon;
+---
+PATCH 2806 2026-03-20T14:09:39.493Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-        if (qs("memorySession")) qs("memorySession").value = wall.sessionId;
+-        if (qs("forecastLat")) qs("forecastLat").value = wall.lat;
+-        if (qs("forecastLon")) qs("forecastLon").value = wall.lon;
+-        if (qs("aqiLat")) qs("aqiLat").value = wall.lat;
+-        if (qs("aqiLon")) qs("aqiLon").value = wall.lon;
+---
+USER 2826 2026-03-20T14:10:37.505Z 彻底干净的最终版
+PATCH 2842 2026-03-20T14:11:17.517Z
+*** Begin Patch
+*** Delete File: E:\project\weather-smarter\frontend\index.html
+*** End Patch
+---
+PATCH 2848 2026-03-20T14:16:47.843Z
+*** Begin Patch
+*** Add File: E:\project\weather-smarter\frontend\index.html
++<!DOCTYPE html>
++<html lang="zh-CN">
++  <head>
++    <meta charset="UTF-8" />
++    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
++    <title>Weather Smarter Console</title>
+---
+PATCH 2855 2026-03-20T14:19:11.671Z
+*** Begin Patch
+*** Add File: E:\project\weather-smarter\frontend\index.html
++<!DOCTYPE html>
++<html lang="zh-CN">
++  <head>
++    <meta charset="UTF-8" />
++    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
++    <title>Weather Smarter Console</title>
+---
+PATCH 2861 2026-03-20T14:21:33.907Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-    <script>
+-      const qs = (id) => document.getElementById(id);
+-      const qsa = (selector, root = document) => Array.from(root.querySelectorAll(selector));
+-    </script>
++    <script>
+---
+PATCH 2876 2026-03-20T14:26:58.489Z
+*** Begin Patch
+*** Delete File: E:\project\weather-smarter\frontend\index.html
+*** Add File: E:\project\weather-smarter\frontend\index.html
++<!doctype html>
++<html lang="zh-CN">
++  <head>
++    <meta charset="UTF-8" />
++    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+---
+PATCH 2892 2026-03-20T14:27:20.915Z
+*** Begin Patch
+*** Delete File: E:\project\weather-smarter\frontend\index.html
+*** End Patch
+---
+PATCH 2898 2026-03-20T14:31:20.478Z
+*** Begin Patch
+*** Add File: E:\project\weather-smarter\frontend\index.html
++<!doctype html>
++<html lang="zh-CN">
++  <head>
++    <meta charset="UTF-8" />
++    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
++    <title>Weather Smarter Console</title>
+---
+PATCH 2905 2026-03-20T14:34:39.495Z
+*** Begin Patch
+*** Add File: E:\project\weather-smarter\frontend\index.html
++<!doctype html>
++<html lang="zh-CN">
++<head>
++  <meta charset="UTF-8" />
++  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
++  <title>Weather Smarter Console</title>
+---
+PATCH 2921 2026-03-20T14:37:58.583Z
+*** Begin Patch
+*** Add File: E:\project\weather-smarter\frontend\index.html
++<!doctype html>
++<html lang="zh-CN">
++<head>
++  <meta charset="UTF-8" />
++  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
++  <title>Weather Smarter Console</title>
+---
+PATCH 3234 2026-03-20T14:48:00.768Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       .story-step {
+         padding: 12px 10px 12px;
+         border-top: none;
+         display: none;
+       }
+---
+PATCH 3292 2026-03-20T14:50:03.543Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-    </style>
++      .story-step.story-pane {
++        display: block !important;
++        height: 100%;
++        overflow: hidden;
+---
+PATCH 3298 2026-03-20T14:50:31.950Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-          <section class="story-step" id="wall">
++          <section class="story-step story-pane" id="wall">
+@@
+-          <section class="story-step" id="decision">
+-            <div class="step-head">
+---
+PATCH 3304 2026-03-20T14:50:59.246Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       const init = () => {
+         bindPills("scenarioPills");
+         bindPills("conditionPills");
+         renderScenes();
+         updateHealthSummary(null, []);
+---
+PATCH 3338 2026-03-20T14:52:56.357Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+           <section class="story-step story-pane ops-pane" id="decision">
+             <div class="ops-shell">
+               <div class="ops-card">
+@@
+               </div>
+---
+PATCH 3352 2026-03-20T14:53:34.662Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+       const mountOpsPane = () => {
+         const boards = $$(".wall .capability-board");
+         const controlMount = qs("opsControlMount");
+         const timelineMount = qs("opsTimelineMount");
+-        if (!boards.length || !controlMount || !timelineMount) return;
+---
+PATCH 3463 2026-03-20T15:03:11.206Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-    </style>
++      .story-step.story-pane {
++        display: block !important;
++        min-height: 0;
++      }
+---
+PATCH 3469 2026-03-20T15:03:59.388Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-          <section class="story-step" id="wall">
++          <section class="story-step story-pane wall-pane" id="wall">
+@@
+-          <section class="story-step" id="decision">
+-            <div class="step-head">
+---
+PATCH 3475 2026-03-20T15:04:20.900Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-      const init = () => {
++      const mountOpsPane = () => {
++        const boards = $$(".wall .capability-board");
++        const controlMount = qs("opsControlMount");
++        const timelineMount = qs("opsTimelineMount");
+---
+PATCH 3481 2026-03-20T15:04:35.550Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\frontend\index.html
+@@
+-          <section class="story-step" id="health">
++          <section class="story-step story-hidden" id="health">
+@@
+-          <section class="story-step" id="weather">
++          <section class="story-step story-hidden" id="weather">
+---
+PATCH 3583 2026-03-20T15:12:40.617Z
+*** Begin Patch
+*** Add File: E:\project\weather-smarter\scripts\extract_frontend_patches.py
++import json
++from pathlib import Path
++
++
++SESSION = Path(r"C:\Users\Administrator\.codex\sessions\2026\03\15\rollout-2026-03-15T23-12-16-019cf20e-1ba4-7212-838b-c09221ddc82b.jsonl")
++
+---
+PATCH 3595 2026-03-20T15:13:05.081Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\scripts\extract_frontend_patches.py
+@@
+ def main() -> None:
++    out = Path("scripts/frontend_patches_dump.txt")
++    chunks: list[str] = []
+     count = 0
+     for line in SESSION.read_text(encoding="utf-8").splitlines():
+---
+PATCH 3610 2026-03-20T15:14:25.431Z
+*** Begin Patch
+*** Add File: E:\project\weather-smarter\scripts\replay_frontend_patches.py
++from __future__ import annotations
++
++from pathlib import Path
++
++
++DUMP = Path("scripts/frontend_patches_dump.txt")
+---
+PATCH 3635 2026-03-20T15:15:26.166Z
+*** Begin Patch
+*** Add File: E:\project\weather-smarter\scripts\list_frontend_patch_meta.py
++import json
++from pathlib import Path
++
++
++SESSION = Path(r"C:\Users\Administrator\.codex\sessions\2026\03\18\rollout-2026-03-18T21-37-58-019d012a-da19-7d50-9823-9bb83562ec06.jsonl")
++
+---
+PATCH 3647 2026-03-20T15:15:49.924Z
+*** Begin Patch
+*** Update File: E:\project\weather-smarter\scripts\list_frontend_patch_meta.py
+@@
+ def main() -> None:
++    lines = []
+     for i, line in enumerate(SESSION.read_text(encoding="utf-8").splitlines(), start=1):
+         try:
+             obj = json.loads(line)
+---

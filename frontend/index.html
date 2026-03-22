@@ -1,0 +1,3705 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Weather Smarter 控制台</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Oxanium:wght@400;600;700&family=Space+Grotesk:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Bebas+Neue&display=swap");
+      :root {
+        color-scheme: dark;
+        --bg: #05060d;
+        --panel: rgba(7, 12, 28, 0.88);
+        --panel-2: rgba(12, 18, 38, 0.85);
+        --ink: #f4f7ff;
+        --ink-soft: #d9e2ff;
+        --muted: #8a96b4;
+        --card: rgba(6, 10, 22, 0.7);
+        --card-2: rgba(10, 16, 36, 0.75);
+        --accent: #52c41a;
+        --accent-2: #52c41a;
+        --accent-3: #52c41a;
+        --accent-4: #52c41a;
+        --danger: #ff4d4f;
+        --stroke: rgba(82, 196, 26, 0.35);
+        --shadow: 0 35px 90px rgba(0, 0, 0, 0.72);
+        --radius: 16px;
+        --mono: "IBM Plex Mono", "Courier New", monospace;
+        --glow: 0 0 24px rgba(82, 196, 26, 0.45), 0 0 60px rgba(82, 196, 26, 0.26);
+        --transition: all 0.3s cubic-bezier(0.15, 0.9, 0.4, 0.9);
+      }
+
+      * {
+        box-sizing: border-box;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      html {
+        scroll-behavior: auto;
+      }
+
+      html,
+      body {
+        width: 100%;
+        overflow-x: hidden;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Space Grotesk", "Noto Sans SC", sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at 12% 18%, rgba(82, 196, 26, 0.32), transparent 38%),
+          radial-gradient(circle at 86% 12%, rgba(82, 196, 26, 0.18), transparent 40%),
+          radial-gradient(circle at 15% 82%, rgba(82, 196, 26, 0.22), transparent 45%),
+          radial-gradient(circle at 80% 75%, rgba(82, 196, 26, 0.18), transparent 42%),
+          linear-gradient(180deg, #03050d 0%, #050816 35%, #070b18 100%);
+        min-height: 100vh;
+      }
+
+      body::before,
+      body::after {
+        content: "";
+        position: fixed;
+        pointer-events: none;
+        z-index: -1;
+        inset: auto;
+        width: 60vmax;
+        height: 60vmax;
+        border-radius: 50%;
+        opacity: 0.18;
+        filter: blur(0px);
+      }
+
+      body::before {
+        top: -28vmax;
+        right: -18vmax;
+        background: radial-gradient(circle, rgba(82, 196, 26, 0.45), transparent 70%);
+      }
+
+      body::after {
+        bottom: -32vmax;
+        left: -18vmax;
+        background: radial-gradient(circle, rgba(82, 196, 26, 0.28), transparent 70%);
+      }
+
+      .fx-layer {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 0;
+        opacity: 0.55;
+        mix-blend-mode: screen;
+      }
+
+      .fx-layer::before,
+      .fx-layer::after {
+        content: "";
+        position: absolute;
+        inset: -20%;
+        background:
+          linear-gradient(
+            120deg,
+            transparent 0%,
+            rgba(82, 196, 26, 0.18) 30%,
+            rgba(82, 196, 26, 0.14) 50%,
+            rgba(82, 196, 26, 0.12) 65%,
+            transparent 78%
+          ),
+          radial-gradient(circle at 26% 30%, rgba(82, 196, 26, 0.22), transparent 55%),
+          radial-gradient(circle at 70% 68%, rgba(82, 196, 26, 0.22), transparent 55%),
+          radial-gradient(circle at 78% 20%, rgba(82, 196, 26, 0.18), transparent 48%);
+        animation: drift 18s linear infinite;
+      }
+
+      .fx-layer::after {
+        animation-duration: 26s;
+        opacity: 0.68;
+      }
+
+      @keyframes drift {
+        0% {
+          transform: translate3d(-5%, -5%, 0) rotate(0deg);
+        }
+        50% {
+          transform: translate3d(3%, 4%, 0) rotate(3deg);
+        }
+        100% {
+          transform: translate3d(-5%, -5%, 0) rotate(0deg);
+        }
+      }
+
+      .frame {
+        max-width: 100%;
+        margin: 0 auto;
+        padding: 0;
+      }
+
+      .screen {
+        min-height: 100vh;
+        display: block;
+        position: relative;
+        width: 100vw;
+        overflow-x: hidden;
+      }
+
+      .screen::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 1;
+        opacity: 0.25;
+        background:
+          repeating-linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.02) 0,
+            rgba(255, 255, 255, 0.02) 1px,
+            transparent 1px,
+            transparent 14px
+          ),
+          repeating-linear-gradient(
+            0deg,
+            rgba(82, 196, 26, 0.05) 0,
+            rgba(82, 196, 26, 0.05) 1px,
+            transparent 1px,
+            transparent 18px
+          );
+        mix-blend-mode: screen;
+      }
+
+      @media (max-width: 1280px) {
+        .content {
+          padding: 12px 12px 24px;
+        }
+        .wall-hero {
+          grid-template-columns: 1fr;
+        }
+        .wall-bottom {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 980px) {
+        .content {
+          padding: 10px 10px 20px;
+        }
+      }
+
+      @media (max-width: 720px) {
+        .hero {
+          padding: 16px;
+        }
+        .step-head {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+        .step-grid {
+          grid-template-columns: 1fr;
+        }
+        .wall {
+          padding: 18px;
+        }
+        .wall-hero-value {
+          font-size: 30px;
+        }
+        .wall-grid {
+          grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        }
+      }
+
+      @media (max-width: 520px) {
+        .hero-title {
+          font-size: 24px;
+        }
+        .wall-hero-value {
+          font-size: 26px;
+        }
+        .output {
+          font-size: 11px;
+        }
+      }
+
+      .content {
+        padding: 8px 10px 16px;
+        position: relative;
+        z-index: 2;
+        min-width: 0;
+      }
+
+      .hero {
+        margin-bottom: 10px;
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 14px;
+        align-items: center;
+        margin-bottom: 8px;
+        padding: 14px 16px;
+        border-radius: 24px;
+        background: rgba(6, 10, 22, 0.45);
+        backdrop-filter: blur(12px) saturate(120%);
+        border: 1px solid rgba(82, 196, 26, 0.25);
+        box-shadow: var(--shadow);
+        transition: var(--transition);
+        animation: rise 0.6s ease both;
+      }
+
+      .hero:hover {
+        background: rgba(6, 10, 22, 0.55);
+        border-color: rgba(82, 196, 26, 0.35);
+        box-shadow: 0 35px 120px rgba(82, 196, 26, 0.15), 0 0 40px rgba(82, 196, 26, 0.1);
+      }
+
+      .hero-title {
+        font-size: clamp(20px, 2.5vw, 32px);
+        margin: 0;
+        letter-spacing: -0.02em;
+        font-family: "Oxanium", "Space Grotesk", sans-serif;
+        text-transform: uppercase;
+      }
+
+      .hero-sub {
+        margin: 4px 0 0;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .hero-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 14px;
+        border-radius: 999px;
+        background: rgba(6, 10, 22, 0.8);
+        border: 1px solid rgba(82, 196, 26, 0.4);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        box-shadow: var(--glow);
+      }
+
+      .nav {
+        display: none;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        gap: 12px;
+      }
+
+      .storyline {
+        display: block;
+        background: rgba(4, 8, 20, 0.5);
+        backdrop-filter: blur(12px) saturate(110%);
+        border: 1px solid rgba(82, 196, 26, 0.2);
+        border-radius: 22px;
+        overflow: hidden;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        transition: var(--transition);
+      }
+
+      .storyline:hover {
+        border-color: rgba(82, 196, 26, 0.3);
+        box-shadow: 0 20px 80px rgba(82, 196, 26, 0.1), 0 0 40px rgba(82, 196, 26, 0.08);
+      }
+
+      .story-step {
+        padding: 12px 10px 12px;
+        border-top: none;
+        display: none;
+      }
+
+      .story-step.is-active {
+        display: block;
+      }
+
+      .step-head {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+
+      .step-title {
+        font-family: "Oxanium", "Space Grotesk", sans-serif;
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        font-size: 13px;
+        color: var(--accent);
+      }
+
+      .step-sub {
+        margin-top: 3px;
+        font-size: 11px;
+        color: var(--muted);
+      }
+
+      .step-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 10px;
+        align-items: start;
+      }
+
+      .step-panel {
+        padding: 2px 0;
+        scroll-margin-top: 10px;
+      }
+
+      .card {
+        --accent-card: var(--accent);
+        --accent-card-2: var(--accent-2);
+        background: rgba(6, 10, 22, 0.5);
+        backdrop-filter: blur(10px) saturate(110%);
+        border: 1px solid rgba(82, 196, 26, 0.2);
+        border-radius: var(--radius);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+        padding: 10px;
+        position: relative;
+        overflow: hidden;
+        animation: rise 0.6s ease both;
+        transition: var(--transition);
+      }
+      .card::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        background: radial-gradient(circle at 20% 10%, rgba(255, 255, 255, 0.08), transparent 45%);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        pointer-events: none;
+      }
+
+      .card::after {
+        content: "";
+        position: absolute;
+        inset: auto -40% -40% auto;
+        width: 180px;
+        height: 180px;
+        background: radial-gradient(circle, var(--accent-card), transparent 70%);
+        opacity: 0.3;
+        transition: opacity 0.3s ease;
+      }
+      .card:hover {
+        background: rgba(6, 10, 22, 0.65);
+        border-color: rgba(82, 196, 26, 0.35);
+        transform: translateY(-2px);
+        box-shadow: 0 20px 60px rgba(82, 196, 26, 0.15), 0 0 30px rgba(82, 196, 26, 0.08);
+      }
+      
+      .card:hover::before {
+        opacity: 1;
+      }
+
+      .card:hover::after {
+        opacity: 0.5;
+      }
+
+      .card[data-tone="decision"] {
+        --accent-card: #52c41a;
+        --accent-card-2: #00e5ff;
+      }
+
+      .card[data-tone="health"] {
+        --accent-card: #52c41a;
+        --accent-card-2: #00e5ff;
+      }
+
+      .card[data-tone="weather"] {
+        --accent-card: #52c41a;
+        --accent-card-2: #00e5ff;
+      }
+
+      .card[data-tone="memory"] {
+        --accent-card: #52c41a;
+        --accent-card-2: #00e5ff;
+      }
+
+      .card[data-tone="forecast"] {
+        --accent-card: #52c41a;
+        --accent-card-2: #00e5ff;
+      }
+
+      .card[data-tone="tasks"] {
+        --accent-card: #52c41a;
+        --accent-card-2: #00e5ff;
+      }
+
+      .card[data-tone="stocks"] {
+        --accent-card: #52c41a;
+        --accent-card-2: #00e5ff;
+      }
+
+      .card[data-tone="rag"] {
+        --accent-card: #52c41a;
+        --accent-card-2: #00e5ff;
+      }
+
+      .card[data-tone="scenes"] {
+        --accent-card: #52c41a;
+        --accent-card-2: #00e5ff;
+      }
+
+      .card h2 {
+        margin: 0 0 4px;
+        font-size: 15px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        line-height: 1.3;
+      }
+
+      .span-7 {
+        grid-column: span 7;
+      }
+
+      .span-5 {
+        grid-column: span 5;
+      }
+
+      .span-12 {
+        grid-column: span 12;
+      }
+
+      .section-tag {
+        font-size: 11px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--accent-2);
+        margin-bottom: 6px;
+        display: block;
+        font-weight: 600;
+      }
+      .section-tag::after {
+        content: "";
+        display: block;
+        width: 52px;
+        height: 2px;
+        margin-top: 6px;
+        background: linear-gradient(90deg, var(--accent-2), transparent);
+      }
+
+      label {
+        display: block;
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 6px;
+      }
+
+      input,
+      textarea,
+      select {
+        width: 100%;
+        border-radius: 12px;
+        border: 1px solid rgba(82, 196, 26, 0.2);
+        padding: 10px 12px;
+        font-size: 14px;
+        font-family: inherit;
+        background: rgba(2, 6, 23, 0.35);
+        backdrop-filter: blur(8px) saturate(105%);
+        color: var(--ink);
+        transition: var(--transition);
+      }
+
+      input:hover,
+      textarea:hover,
+      select:hover {
+        border-color: rgba(82, 196, 26, 0.35);
+        background: rgba(2, 6, 23, 0.45);
+      }
+
+      input:focus,
+      textarea:focus,
+      select:focus {
+        outline: none;
+        border-color: rgba(82, 196, 26, 0.5);
+        background: rgba(2, 6, 23, 0.55);
+        box-shadow: 0 0 0 3px rgba(82, 196, 26, 0.1);
+      }
+
+      textarea {
+        min-height: 78px;
+        resize: vertical;
+      }
+
+      .row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 8px;
+        margin-bottom: 6px;
+      }
+
+      .actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      button {
+        border: none;
+        background: linear-gradient(120deg, rgba(82, 196, 26, 0.95), rgba(82, 196, 26, 0.85));
+        color: #04030a;
+        padding: 10px 16px;
+        border-radius: 999px;
+        cursor: pointer;
+        font-size: 13px;
+        letter-spacing: 0.02em;
+        transition: all 0.25s cubic-bezier(0.15, 0.9, 0.4, 0.9);
+        box-shadow: 0 8px 24px rgba(82, 196, 26, 0.3), 0 0 16px rgba(82, 196, 26, 0.15);
+        position: relative;
+        overflow: hidden;
+      }
+
+      button::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      }
+
+      button.secondary {
+        background: rgba(4, 8, 20, 0.5);
+        backdrop-filter: blur(8px);
+        color: var(--ink);
+        border: 1px solid rgba(82, 196, 26, 0.3);
+        box-shadow: 0 4px 16px rgba(7, 12, 28, 0.5);
+      }
+
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      button:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 36px rgba(82, 196, 26, 0.35), 0 0 24px rgba(82, 196, 26, 0.2);
+      }
+
+      button:hover:not(:disabled)::before {
+        opacity: 1;
+      }
+
+      button:active:not(:disabled) {
+        transform: translateY(0);
+        box-shadow: 0 4px 12px rgba(82, 196, 26, 0.25);
+      }
+
+      .pill-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .pill {
+        border: 1px dashed rgba(82, 196, 26, 0.2);
+        padding: 5px 10px;
+        border-radius: 999px;
+        font-size: 11px;
+        background: rgba(2, 6, 23, 0.35);
+        backdrop-filter: blur(6px);
+        cursor: pointer;
+        transition: var(--transition);
+      }
+
+      .pill:hover {
+        border-color: rgba(82, 196, 26, 0.3);
+        background: rgba(2, 6, 23, 0.5);
+      }
+
+      .pill.active {
+        background: linear-gradient(120deg, rgba(82, 196, 26, 0.95), rgba(82, 196, 26, 0.85));
+        border-color: transparent;
+        color: #04030a;
+        box-shadow: 0 4px 12px rgba(82, 196, 26, 0.3);
+      }
+
+      .pill input {
+        display: none;
+      }
+
+      .output {
+        background: rgba(2, 6, 20, 0.6);
+        backdrop-filter: blur(8px);
+        color: #c8f7dc;
+        border-radius: 12px;
+        padding: 8px 10px;
+        font-family: var(--mono);
+        font-size: 10px;
+        max-height: 140px;
+        overflow: auto;
+        box-shadow: inset 0 0 0 1px rgba(82, 196, 26, 0.15), 0 4px 16px rgba(0, 0, 0, 0.3);
+        transition: var(--transition);
+      }
+
+      .output:hover {
+        box-shadow: inset 0 0 0 1px rgba(82, 196, 26, 0.25), 0 4px 24px rgba(82, 196, 26, 0.08);
+      }
+
+      .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 6px;
+        margin-top: 2px;
+      }
+
+      .stat {
+        background: rgba(8, 14, 32, 0.5);
+        backdrop-filter: blur(6px);
+        border-radius: 10px;
+        padding: 6px 8px;
+        font-size: 10px;
+        border: 1px solid rgba(82, 196, 26, 0.15);
+        transition: var(--transition);
+      }
+
+      .stat:hover {
+        background: rgba(8, 14, 32, 0.7);
+        border-color: rgba(82, 196, 26, 0.25);
+      }
+
+      .stat strong {
+        display: block;
+        font-size: 12px;
+        margin-top: 2px;
+        font-weight: 600;
+      }
+
+      .table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+
+      .table th,
+      .table td {
+        padding: 6px;
+        border-bottom: 1px dashed rgba(82, 196, 26, 0.2);
+        text-align: left;
+      }
+
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 5px 10px;
+        border-radius: 999px;
+        background: rgba(6, 10, 24, 0.5);
+        backdrop-filter: blur(6px);
+        border: 1px solid rgba(82, 196, 26, 0.2);
+        font-size: 10px;
+        transition: var(--transition);
+      }
+
+      .tag:hover {
+        background: rgba(6, 10, 24, 0.7);
+        border-color: rgba(82, 196, 26, 0.3);
+      }
+
+      .notice {
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 4px;
+      }
+
+      .risk-high {
+        color: var(--danger);
+        text-shadow: 0 0 12px rgba(255, 77, 79, 0.6);
+      }
+
+      .scene-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 6px;
+      }
+
+      .scene {
+        padding: 8px 10px;
+        border-radius: 14px;
+        background: rgba(6, 10, 24, 0.5);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(82, 196, 26, 0.15);
+        font-size: 11px;
+        transition: var(--transition);
+        cursor: pointer;
+      }
+
+      .scene:hover {
+        background: rgba(6, 10, 24, 0.7);
+        border-color: rgba(82, 196, 26, 0.25);
+        transform: translateY(-1px);
+      }
+
+      .divider {
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(82, 196, 26, 0.5), transparent);
+        margin: 8px 0;
+        transition: var(--transition);
+      }
+
+      .divider:hover {
+        background: linear-gradient(90deg, transparent, rgba(82, 196, 26, 0.8), transparent);
+      }
+
+      .health-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 6px;
+      }
+
+      .health-card {
+        background: rgba(6, 10, 24, 0.5);
+        backdrop-filter: blur(8px);
+        border-radius: 12px;
+        padding: 8px;
+        border: 1px solid rgba(82, 196, 26, 0.15);
+        transition: var(--transition);
+      }
+
+      .health-card:hover {
+        background: rgba(6, 10, 24, 0.7);
+        border-color: rgba(82, 196, 26, 0.25);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(82, 196, 26, 0.1);
+      }
+
+      .health-card h4 {
+        margin: 0 0 4px;
+        font-size: 11px;
+        font-weight: 600;
+      }
+
+      .health-card p {
+        margin: 0;
+        font-size: 10px;
+        color: var(--muted);
+        line-height: 1.3;
+      }
+
+      .float-panel {
+        display: grid;
+        gap: 10px;
+      }
+
+      .banner {
+        background: linear-gradient(120deg, rgba(82, 196, 26, 0.9), rgba(82, 196, 26, 0.8));
+        color: #04030a;
+        border-radius: 14px;
+        padding: 12px 14px;
+        font-size: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 12px 40px rgba(82, 196, 26, 0.25), 0 0 20px rgba(82, 196, 26, 0.1);
+        transition: var(--transition);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .banner::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(120deg, transparent, rgba(255,255,255,0.1), transparent);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      }
+
+      .banner:hover::before {
+        opacity: 1;
+      }
+
+      .banner span {
+        opacity: 0.9;
+        font-weight: 500;
+      }
+
+      .toggle-row {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+
+      .toggle {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(82, 196, 26, 0.25);
+        background: rgba(4, 8, 20, 0.5);
+        backdrop-filter: blur(6px);
+        transition: var(--transition);
+      }
+
+      .toggle:hover {
+        border-color: rgba(82, 196, 26, 0.35);
+        background: rgba(4, 8, 20, 0.65);
+      }
+
+      .toggle input {
+        margin: 0;
+      }
+
+      .wall-ticker {
+        margin-top: 10px;
+        background: rgba(6, 10, 24, 0.65);
+        border: 1px solid rgba(82, 196, 26, 0.3);
+        border-radius: 999px;
+        overflow: hidden;
+        padding: 4px 0;
+      }
+
+      .ticker-track {
+        display: inline-flex;
+        gap: 30px;
+        white-space: nowrap;
+        animation: ticker 16s linear infinite;
+        padding: 0 20px;
+        font-size: 11px;
+        color: var(--muted);
+      }
+
+      .ticker-track span {
+        display: inline-flex;
+        gap: 10px;
+        align-items: center;
+      }
+
+      @keyframes ticker {
+        from {
+          transform: translateX(0);
+        }
+        to {
+          transform: translateX(-50%);
+        }
+      }
+
+      .wall {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        grid-template-rows: auto auto auto auto;
+        padding: 8px;
+        gap: 4px;
+        background:
+          linear-gradient(160deg, rgba(4, 8, 20, 0.8), rgba(6, 12, 24, 0.75)),
+          radial-gradient(circle at 18% 20%, rgba(82, 196, 26, 0.12), transparent 48%),
+          radial-gradient(circle at 82% 18%, rgba(82, 196, 26, 0.08), transparent 50%),
+          radial-gradient(circle at 70% 75%, rgba(82, 196, 26, 0.1), transparent 48%);
+        overflow: hidden;
+        backdrop-filter: blur(4px);
+        transition: var(--transition);
+      }
+
+      .wall:hover {
+        background:
+          linear-gradient(160deg, rgba(4, 8, 20, 0.85), rgba(6, 12, 24, 0.8)),
+          radial-gradient(circle at 18% 20%, rgba(82, 196, 26, 0.15), transparent 48%),
+          radial-gradient(circle at 82% 18%, rgba(82, 196, 26, 0.1), transparent 50%),
+          radial-gradient(circle at 70% 75%, rgba(82, 196, 26, 0.12), transparent 48%);
+      }
+
+      .section-tag {
+        grid-column: 1 / -1;
+        grid-row: 1;
+      }
+
+      .wall-grid {
+        grid-column: 1;
+        grid-row: 2;
+      }
+
+      .wall-bottom {
+        grid-column: 1 / -1;
+        grid-row: 3;
+      }
+
+      .wall-charts {
+        grid-column: 2 / -1;
+        grid-row: 2;
+      }
+
+      .capability-grid {
+        grid-column: 1 / -1;
+        grid-row: 4;
+      }
+
+      .wall-hero {
+        display: grid;
+        grid-template-columns: minmax(260px, 2fr) minmax(220px, 1fr);
+        gap: 8px;
+        align-items: center;
+        margin-top: 6px;
+      }
+
+      .wall-hero-card {
+        background: rgba(6, 10, 24, 0.5);
+        backdrop-filter: blur(8px);
+        border-radius: 16px;
+        border: 1px solid rgba(82, 196, 26, 0.15);
+        padding: 13px 14px;
+        transition: var(--transition);
+      }
+
+      .wall-hero-card:hover {
+        background: rgba(6, 10, 24, 0.7);
+        border-color: rgba(82, 196, 26, 0.25);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(82, 196, 26, 0.1);
+      }
+
+      .wall-hero-title {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.2em;
+        color: var(--accent);
+      }
+
+      .wall-hero-value {
+        font-size: 30px;
+        font-weight: 700;
+        margin: 4px 0 6px;
+        font-family: "Bebas Neue", "Oxanium", "Space Grotesk", sans-serif;
+        letter-spacing: 0.08em;
+      }
+
+      .wall-hero-sub {
+        font-size: 10px;
+        color: var(--muted);
+      }
+
+      .wall::after {
+        width: 240px;
+        height: 240px;
+      }
+
+      .wall-head {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .wall-summary {
+        margin: 4px 0 0;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .wall-meta {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        flex-wrap: nowrap;
+      }
+
+      .wall-meta .tag {
+        flex-shrink: 0;
+        padding: 3px 6px;
+        font-size: 9px;
+        text-align: center;
+        white-space: nowrap;
+        height: fit-content;
+      }
+
+      .wall-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 4px;
+        margin-top: 0;
+      }
+
+      .wall-card {
+        background: rgba(6, 10, 24, 0.45);
+        backdrop-filter: blur(8px) saturate(110%);
+        border-radius: 12px;
+        padding: 5px 6px;
+        border: 1px solid rgba(82, 196, 26, 0.15);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        transition: var(--transition);
+      }
+
+      .wall-card:hover {
+        background: rgba(6, 10, 24, 0.6);
+        border-color: rgba(82, 196, 26, 0.25);
+        box-shadow: 0 8px 24px rgba(82, 196, 26, 0.12);
+      }
+
+      .wall-title {
+        font-size: 7px;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        color: var(--accent);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .wall-value {
+        font-size: 15px;
+        margin-top: 0px;
+        font-weight: 600;
+      }
+
+      .wall-sub {
+        font-size: 9px;
+        color: var(--muted);
+      }
+
+      .wall-bottom {
+        display: grid;
+        grid-template-columns: minmax(180px, 1.5fr) minmax(140px, 1fr);
+        gap: 4px;
+        margin-top: 0;
+      }
+
+      .wall-map {
+        border-radius: 12px;
+        border: 1px solid rgba(82, 196, 26, 0.2);
+        padding: 4px;
+        background: rgba(4, 8, 20, 0.45);
+        backdrop-filter: blur(10px) saturate(115%);
+        background-image: 
+          repeating-linear-gradient(
+            90deg,
+            rgba(82, 196, 26, 0.15) 0,
+            rgba(82, 196, 26, 0.15) 1px,
+            transparent 1px,
+            transparent 22px
+          ),
+          repeating-linear-gradient(
+            180deg,
+            rgba(82, 196, 26, 0.15) 0,
+            rgba(82, 196, 26, 0.15) 1px,
+            transparent 1px,
+            transparent 22px
+          );
+        min-height: 45px;
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        gap: 2px;
+        position: relative;
+        overflow: hidden;
+        transition: var(--transition);
+      }
+
+      .wall-map:hover {
+        border-color: rgba(82, 196, 26, 0.3);
+        background-image: 
+          repeating-linear-gradient(
+            90deg,
+            rgba(82, 196, 26, 0.2) 0,
+            rgba(82, 196, 26, 0.2) 1px,
+            transparent 1px,
+            transparent 22px
+          ),
+          repeating-linear-gradient(
+            180deg,
+            rgba(82, 196, 26, 0.2) 0,
+            rgba(82, 196, 26, 0.2) 1px,
+            transparent 1px,
+            transparent 22px
+          );
+      }
+
+      .wall-map-title {
+        font-size: 8px;
+        color: var(--accent);
+      }
+
+      .wall-map-indicator {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        font-size: 8px;
+      }
+
+      .map-heat {
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(circle at 20% 30%, rgba(82, 196, 26, 0.35), transparent 45%),
+          radial-gradient(circle at 65% 40%, rgba(82, 196, 26, 0.35), transparent 40%),
+          radial-gradient(circle at 45% 70%, rgba(82, 196, 26, 0.25), transparent 50%);
+        opacity: 0.8;
+        animation: heatMove 8s ease-in-out infinite;
+        pointer-events: none;
+      }
+
+      @keyframes heatMove {
+        0% {
+          transform: translate3d(0, 0, 0) scale(1);
+        }
+        50% {
+          transform: translate3d(3%, -2%, 0) scale(1.05);
+        }
+        100% {
+          transform: translate3d(0, 0, 0) scale(1);
+        }
+      }
+
+      .spark {
+        height: 6px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, rgba(82, 196, 26, 0.9), rgba(82, 196, 26, 0.9));
+        width: 60%;
+      }
+
+      .wall-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2px;
+        margin-top: 2px;
+        position: relative;
+        z-index: 2;
+      }
+
+      .wall-tags .tag {
+        font-size: 8px;
+      }
+
+      .wall-list {
+        list-style: none;
+        padding: 0;
+        margin: 1px 0 0;
+        display: grid;
+        gap: 1px;
+        font-size: 9px;
+        color: var(--muted);
+        position: relative;
+        z-index: 2;
+      }
+
+      .wall-charts {
+        margin-top: 0;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 4px;
+      }
+
+      .capability-grid {
+        margin-top: 10px;
+        display: grid;
+        grid-template-columns: minmax(260px, 2fr) minmax(220px, 1fr);
+        gap: 8px;
+      }
+
+      .capability-board {
+        background: rgba(2, 6, 23, 0.62);
+        border-radius: 12px;
+        border: 1px solid rgba(82, 196, 26, 0.25);
+        padding: 8px;
+        min-height: 240px;
+      }
+
+      .cap-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 6px;
+      }
+
+      .cap-title {
+        font-size: 9px;
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        color: var(--accent);
+      }
+
+      .cap-status {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .cap-status .tag {
+        font-size: 8px;
+      }
+
+      .cap-actions {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 6px;
+      }
+
+      .cap-actions button {
+        width: 100%;
+        border-radius: 12px;
+        font-size: 11px;
+        padding: 7px 8px;
+      }
+
+      .cap-inline {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 110px;
+        gap: 6px;
+      }
+
+      .cap-voice {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .cap-inline select,
+      .cap-voice button {
+        min-width: 0;
+      }
+
+      .wall-grid {
+        gap: 6px;
+      }
+
+      .wall-card {
+        padding: 10px 10px 9px;
+      }
+
+      .wall-bottom {
+        gap: 6px;
+      }
+
+      .wall-map-indicator {
+        gap: 6px;
+      }
+
+      .wall-list {
+        margin: 2px 0 0;
+        font-size: 11px;
+        line-height: 1.45;
+      }
+
+      .chart-card {
+        padding: 10px;
+      }
+
+      .wall-card,
+      .chart-card,
+      .health-card {
+        min-height: 0;
+      }
+
+      .wall-card {
+        padding: 8px 9px 7px;
+      }
+
+      .chart-card,
+      .health-card {
+        padding: 8px;
+      }
+
+      .wall-title,
+      .chart-title,
+      .cap-title,
+      .step-title,
+      .health-card h4 {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.2;
+      }
+
+      .wall-sub,
+      .wall-value {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .section-tag {
+        margin-bottom: 2px;
+      }
+
+      .wall-meta {
+        gap: 6px;
+      }
+
+      .wall-title {
+        margin-bottom: 2px;
+        font-size: 10px;
+      }
+
+      .wall-value {
+        font-size: 24px;
+        line-height: 1.05;
+        margin-bottom: 1px;
+      }
+
+      .wall-sub {
+        font-size: 10px;
+        line-height: 1.15;
+      }
+
+      .wall-map-title,
+      .chart-title {
+        margin-bottom: 4px;
+      }
+
+      .wall-charts {
+        gap: 6px;
+        margin-top: 6px;
+      }
+
+      .gauge-value {
+        font-size: 24px;
+      }
+
+      .wall {
+        gap: 6px;
+      }
+
+      .capability-grid,
+      .wall-bottom,
+      .wall-charts {
+        gap: 6px;
+      }
+
+      .cap-timeline {
+        max-height: 118px;
+        overflow: auto;
+      }
+
+      .screen,
+      .content {
+        min-height: 100vh;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      .storyline {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        height: calc(100vh - 84px);
+        overflow: hidden;
+        align-content: start;
+      }
+
+      .story-step {
+        margin: 0;
+        padding: 10px;
+        min-height: 0;
+      }
+
+      .step-head {
+        margin-bottom: 6px;
+      }
+
+      .step-grid {
+        gap: 8px;
+      }
+
+      .step-panel {
+        padding: 10px;
+        min-height: 0;
+      }
+
+      .output,
+      .cap-output,
+      .health-summary,
+      .table,
+      .scene-grid {
+        max-height: 118px;
+        overflow: auto;
+      }
+
+      textarea {
+        min-height: 56px;
+        max-height: 56px;
+      }
+
+      .console-intro {
+        position: relative;
+        margin-bottom: 8px;
+        padding: 4px 8px;
+      }
+
+      .cap-controls {
+        margin-top: 6px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 4px;
+      }
+
+      .cap-controls input,
+      .cap-controls select {
+        padding: 5px 6px;
+        font-size: 10px;
+      }
+
+      .cap-output {
+        margin-top: 6px;
+        max-height: 140px;
+      }
+
+      .cap-timeline {
+        margin-top: 4px;
+        display: grid;
+        gap: 2px;
+        max-height: 105px;
+        overflow: auto;
+      }
+
+      .cap-event {
+        font-size: 9px;
+        color: var(--ink-soft);
+        background: rgba(6, 10, 24, 0.56);
+        border: 1px solid rgba(82, 196, 26, 0.2);
+        border-radius: 8px;
+        padding: 3px 5px;
+      }
+
+      .cap-event strong {
+        color: var(--accent);
+        font-weight: 600;
+      }
+
+      .quick-input {
+        margin-top: 6px;
+      }
+
+      .quick-input textarea {
+        min-height: 46px;
+      }
+
+      .chart-card {
+        background: rgba(2, 6, 23, 0.6);
+        border-radius: 12px;
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        padding: 5px 6px;
+      }
+
+      .chart-title {
+        font-size: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        color: var(--accent);
+      }
+
+      .chart-canvas {
+        width: 100%;
+        height: 30px;
+        margin-top: 1px;
+        display: block;
+      }
+
+      .gauge {
+        width: 60px;
+        height: 60px;
+        margin: 0 auto;
+        position: relative;
+      }
+
+      .gauge svg {
+        transform: rotate(-90deg);
+      }
+
+      .gauge-value {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .impact-bar {
+        height: 8px;
+        border-radius: 999px;
+        background: rgba(148, 163, 184, 0.2);
+        overflow: hidden;
+        margin: 8px 0 4px;
+      }
+
+      .impact-bar span {
+        display: block;
+        height: 100%;
+        width: 50%;
+        background: linear-gradient(90deg, rgba(34, 211, 238, 0.9), rgba(245, 158, 11, 0.9));
+      }
+
+      .impact-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        background: linear-gradient(120deg, rgba(34, 211, 238, 0.2), rgba(245, 158, 11, 0.2));
+        font-size: 11px;
+      }
+
+      @keyframes rise {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes shimmer {
+        0% {
+          background-position: -1000px 0;
+        }
+        100% {
+          background-position: 1000px 0;
+        }
+      }
+
+      @keyframes pulse-glow {
+        0%, 100% {
+          box-shadow: 0 0 12px rgba(82, 196, 26, 0.2);
+        }
+        50% {
+          box-shadow: 0 0 24px rgba(82, 196, 26, 0.4);
+        }
+      }
+
+      @keyframes float {
+        0%, 100% {
+          transform: translateY(0px);
+        }
+        50% {
+          transform: translateY(-6px);
+        }
+      }
+
+      .skeleton {
+        background: linear-gradient(
+          90deg,
+          rgba(82, 196, 26, 0.1) 25%,
+          rgba(82, 196, 26, 0.2) 50%,
+          rgba(82, 196, 26, 0.1) 75%
+        );
+        background-size: 1000px 100%;
+        animation: shimmer 2s infinite;
+      }
+
+      @media (max-width: 980px) {
+        .span-7,
+        .span-5 {
+          grid-column: span 12;
+        }
+
+        .wall-meta {
+          display: flex;
+          gap: 4px;
+          flex-wrap: nowrap;
+          width: 100%;
+        }
+
+        .wall-bottom {
+          grid-template-columns: 1fr;
+        }
+
+        .capability-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .story-step.story-pane {
+        display: block !important;
+        min-height: 0;
+      }
+
+      .story-step.story-hidden {
+        display: none !important;
+      }
+
+      .storyline {
+        display: grid;
+        grid-template-columns: minmax(0, 1.24fr) minmax(420px, 0.76fr);
+        gap: 10px;
+        height: calc(100vh - 84px);
+        overflow: hidden;
+        align-items: stretch;
+      }
+
+      .story-pane {
+        border-radius: 22px;
+        background: rgba(4, 8, 20, 0.5);
+        backdrop-filter: blur(12px) saturate(110%);
+        border: 1px solid rgba(82, 196, 26, 0.2);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        overflow: hidden;
+      }
+
+      .wall-pane {
+        padding: 10px;
+      }
+
+      .wall-pane .wall {
+        height: 100%;
+      }
+
+      .wall-pane .capability-grid {
+        display: none;
+      }
+
+      .ops-pane {
+        padding: 10px;
+      }
+
+      .ops-shell {
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
+        gap: 10px;
+        height: 100%;
+        min-height: 0;
+      }
+
+      .formation-board {
+        background: rgba(6, 10, 22, 0.56);
+        border: 1px solid rgba(82, 196, 26, 0.22);
+        border-radius: 18px;
+        padding: 12px;
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.38);
+        backdrop-filter: blur(12px) saturate(110%);
+      }
+
+      .formation-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .formation-btn {
+        background: rgba(10, 18, 36, 0.75);
+        border: 1px solid rgba(82, 196, 26, 0.2);
+        color: var(--ink);
+        border-radius: 14px;
+        padding: 10px 12px;
+        text-align: left;
+        cursor: pointer;
+        transition: var(--transition);
+      }
+
+      .formation-btn strong {
+        display: block;
+        font-size: 13px;
+        margin-bottom: 4px;
+      }
+
+      .formation-btn span {
+        display: block;
+        color: var(--muted);
+        font-size: 11px;
+        line-height: 1.35;
+      }
+
+      .formation-btn:hover {
+        border-color: rgba(82, 196, 26, 0.4);
+        box-shadow: 0 10px 28px rgba(82, 196, 26, 0.14);
+        transform: translateY(-1px);
+      }
+
+      .formation-btn.is-active {
+        background: linear-gradient(120deg, rgba(82, 196, 26, 0.22), rgba(82, 196, 26, 0.08));
+        border-color: rgba(82, 196, 26, 0.5);
+      }
+
+      .ops-main {
+        display: grid;
+        grid-template-rows: minmax(0, 1.15fr) minmax(220px, 0.85fr);
+        gap: 10px;
+        min-height: 0;
+      }
+
+      .ops-card {
+        background: rgba(6, 10, 22, 0.56);
+        border: 1px solid rgba(82, 196, 26, 0.22);
+        border-radius: 18px;
+        padding: 12px;
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.38);
+        backdrop-filter: blur(12px) saturate(110%);
+        min-height: 0;
+        overflow: hidden;
+      }
+
+      .ops-mount,
+      .ops-mount .capability-board {
+        height: 100%;
+        min-height: 0;
+      }
+
+      .ops-mount .capability-board {
+        margin: 0;
+      }
+
+      .ops-mount .cap-controls {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .ops-mount .cap-output,
+      .ops-mount .cap-timeline {
+        max-height: none;
+      }
+
+      @media (max-width: 1280px) {
+        .storyline {
+          grid-template-columns: 1fr;
+          height: auto;
+          overflow: visible;
+        }
+
+        .story-pane {
+          overflow: visible;
+        }
+
+        .ops-shell,
+        .ops-main {
+          grid-template-rows: none;
+          height: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="fx-layer"></div>
+    <div class="screen">
+      <main class="content">
+        <div style="margin-bottom: 8px; padding: 2px 6px; position: relative;">
+          <div class="console-intro">
+            <p style="margin: 0 0 1px; font-size: 10px; color: var(--muted);">Weather Smarter Console</p>
+            <h2 style="margin: 0 0 1px; font-size: 13px; font-weight: 600;">环境驱动决策平台控制台</h2>
+            <p style="margin: 0; font-size: 10px; color: var(--muted); line-height: 1.2;">把天气、健康、任务、记忆、RAG 与 LLM 统一进一条可执行链路。</p>
+          </div>
+          <div class="wall-meta" style="position: absolute; top: 2px; right: 6px;">
+            <span class="tag" id="wallCity">上海</span>
+            <span class="tag" id="wallTime">2026-03-16 07:00</span>
+            <span class="tag" id="wallStatus">小雨</span>
+            <span class="tag" id="wallMode">Auto</span>
+          </div>
+        </div>
+
+        <div class="storyline">
+          <section class="story-step story-pane wall-pane" id="wall">
+            <div class="wall" data-tone="scenes">
+          <span class="section-tag">Environment Wall</span>
+          <div class="wall-grid" id="wallStats">
+            <div class="wall-card">
+              <div class="wall-title">体感温度</div>
+              <div class="wall-value" id="wallTemp">10.8℃</div>
+              <div class="wall-sub">湿度 82%</div>
+            </div>
+            <div class="wall-card">
+              <div class="wall-title">AQI 指数</div>
+              <div class="wall-value" id="wallAqi">68</div>
+              <div class="wall-sub">PM2.5</div>
+            </div>
+            <div class="wall-card">
+              <div class="wall-title">风险等级</div>
+              <div class="wall-value" id="wallRisk">中等</div>
+              <div class="wall-sub">降雨 + 大风</div>
+            </div>
+            <div class="wall-card">
+              <div class="wall-title">健康提醒</div>
+              <div class="wall-value" id="wallHealth">风湿关注</div>
+              <div class="wall-sub">湿冷注意保暖</div>
+            </div>
+            <div class="wall-card">
+              <div class="wall-title">降水概率</div>
+              <div class="wall-value" id="wallRainProb">60%</div>
+              <div class="wall-sub" id="wallRainText">短时阵雨</div>
+            </div>
+            <div class="wall-card">
+              <div class="wall-title">风力等级</div>
+              <div class="wall-value" id="wallWind">4级</div>
+              <div class="wall-sub" id="wallWindText">东风</div>
+            </div>
+          </div>
+          <div class="wall-bottom">
+            <div class="wall-map">
+              <div class="map-heat"></div>
+              <div class="wall-map-title">城市网格态势</div>
+              <div class="wall-map-indicator">
+                <div class="spark"></div>
+                <span>降水 60% · 风力 4 级</span>
+              </div>
+              <div class="wall-tags" id="wallTags">
+                <span class="tag">雨天通勤</span>
+                <span class="tag">湿冷提醒</span>
+                <span class="tag">AQI 关注</span>
+              </div>
+              <ul class="wall-list" id="wallList">
+                <li>07:00-09:00 降雨活跃，骑行减速。</li>
+                <li>09:00 后雨势减弱，外出风险下降。</li>
+                <li>午间紫外线偏弱，可轻度户外。</li>
+              </ul>
+            </div>
+            <div class="wall-card">
+              <div class="wall-title">事件提示</div>
+              <div class="wall-sub">最新联动任务</div>
+              <ul class="wall-list" id="wallTasks">
+                <li>06:40 通勤：带雨衣</li>
+                <li>07:10 健康：关节保暖</li>
+                <li>18:00 运动：空气良好</li>
+              </ul>
+            </div>
+          </div>
+          <div class="wall-charts">
+            <div class="chart-card">
+              <div class="chart-title">降水强度</div>
+              <canvas class="chart-canvas" id="rainChart" width="300" height="80"></canvas>
+            </div>
+            <div class="chart-card">
+              <div class="chart-title">空气质量</div>
+              <div class="gauge" id="aqiGauge">
+                <svg viewBox="0 0 120 120">
+                  <circle cx="60" cy="60" r="46" stroke="rgba(148,163,184,0.25)" stroke-width="10" fill="none" />
+                  <circle cx="60" cy="60" r="46" stroke="url(#gaugeGradient)" stroke-width="10" fill="none" stroke-linecap="round" stroke-dasharray="0 999" id="aqiGaugeArc" />
+                  <defs>
+                    <linearGradient id="gaugeGradient" x1="0" x2="1">
+                      <stop offset="0%" stop-color="#22d3ee" />
+                      <stop offset="100%" stop-color="#f59e0b" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <div class="gauge-value" id="aqiGaugeValue">68</div>
+              </div>
+            </div>
+            <div class="chart-card">
+              <div class="chart-title">出行热度</div>
+              <canvas class="chart-canvas" id="trafficChart" width="300" height="80"></canvas>
+            </div>
+          </div>
+          <div class="capability-grid">
+            <div class="capability-board">
+              <div class="cap-head">
+                <div class="cap-title">后端能力总控</div>
+                <div class="cap-status" id="capabilityStatus">
+                  <span class="tag" id="capApiTag">API 待检测</span>
+                  <span class="tag" id="capLlmTag">LLM 未知</span>
+                </div>
+              </div>
+              <div class="quick-input">
+                <label for="wallQueryText">统一问题入口</label>
+                <textarea id="wallQueryText">明早 7 点在上海骑行通勤，要带雨衣吗？</textarea>
+              </div>
+              <div class="cap-controls">
+                <input id="wallSessionId" value="demo-session" placeholder="sessionId" />
+                <input id="wallCityInput" value="上海" placeholder="城市" />
+                <input id="wallAdcodeInput" value="310000" placeholder="adcode" />
+                <input id="wallTimeInput" value="2026-03-16T07:00:00+08:00" placeholder="时间 ISO" />
+                <input id="wallUserId" value="user-001" placeholder="user_id" />
+                <input id="wallConditions" value="rheumatism" placeholder="健康条件(逗号分隔)" />
+                <input id="wallHealthNote" value="湿冷敏感，雨天关节不适" placeholder="健康备注" />
+                <input id="wallRagQuery" value="潮湿天气 风湿 关节痛 建议" placeholder="RAG 查询" />
+                <input id="wallSignal" value="雨天+湿冷+通勤压力" placeholder="市场信号" />
+                <input id="wallRegion" value="华东" placeholder="区域" />
+                <input id="wallLat" value="31.23" placeholder="纬度" />
+                <input id="wallLon" value="121.53" placeholder="经度" />
+                <input id="wallTaskTime" value="2026-03-16T07:00:00+08:00" placeholder="任务时间" />
+                <select id="wallTaskType">
+                  <option value="commute">通勤</option>
+                  <option value="sport">运动</option>
+                  <option value="health">健康</option>
+                  <option value="travel">出行</option>
+                </select>
+              </div>
+              <div class="cap-actions">
+                <button id="wallRunAllBtn">全链路执行</button>
+                <div class="cap-inline">
+                  <select id="wallQuickAction">
+                    <option value="query">决策 Query</option>
+                    <option value="weather">Weather</option>
+                    <option value="forecast">Forecast</option>
+                    <option value="aqi">AQI</option>
+                    <option value="health-profile">Health Profile</option>
+                    <option value="health-load">Health Load</option>
+                    <option value="health-delete">Health Delete</option>
+                    <option value="health-alerts">Health Alerts</option>
+                    <option value="profile-analysis">Profile Analysis</option>
+                    <option value="memory">Memory</option>
+                    <option value="memory-clear">Memory Clear</option>
+                    <option value="task">Task</option>
+                    <option value="rag">RAG</option>
+                    <option value="stocks">Stocks</option>
+                  </select>
+                  <button id="wallQuickRunBtn" class="secondary">执行所选</button>
+                </div>
+                <div class="cap-voice">
+                  <button id="wallVoiceStartBtn" class="secondary">语音输入</button>
+                  <button id="wallVoiceStopBtn" class="secondary">停止录音</button>
+                  <button id="wallVoiceSpeakBtn" class="secondary">播报结果</button>
+                </div>
+              </div>
+              <div id="wallVoiceStatus" class="notice">语音状态：待机</div>
+              <pre class="output cap-output" id="wallOutput">等待触发...</pre>
+            </div>
+            <div class="capability-board">
+              <div class="cap-head">
+                <div class="cap-title">执行时间线</div>
+                <span class="tag" id="capCounter">0 次</span>
+              </div>
+              <div class="cap-timeline" id="capTimeline">
+                <div class="cap-event"><strong>系统</strong> 环境大屏已就绪，等待触发。</div>
+              </div>
+            </div>
+          </div>
+          <div class="wall-ticker">
+            <div class="ticker-track">
+              <span>风险标签：雨天 · 湿冷 · 通勤压力</span>
+              <span>健康提醒：关节保暖 · 呼吸敏感关注</span>
+              <span>城市活跃：出行热度下降 12%</span>
+              <span>行业信号：物流承压 · 健康需求上升</span>
+              <span>风险标签：雨天 · 湿冷 · 通勤压力</span>
+              <span>健康提醒：关节保暖 · 呼吸敏感关注</span>
+            </div>
+          </div>
+          </section>
+
+          <section class="story-step story-pane ops-pane" id="decision">
+            <div class="ops-shell">
+              <div class="formation-board">
+                <div class="cap-head">
+                  <div>
+                    <div class="cap-title">编队模式</div>
+                    <div class="step-sub">按主题一键组合 Query / Weather / RAG / Memory / Task</div>
+                  </div>
+                  <span class="tag">Auto Compose</span>
+                </div>
+                <div class="formation-grid" id="formationGrid">
+                  <button class="formation-btn is-active" type="button" data-formation="commute">
+                    <strong>通勤编队</strong>
+                    <span>天气、AQI、任务、决策联动</span>
+                  </button>
+                  <button class="formation-btn" type="button" data-formation="health">
+                    <strong>健康编队</strong>
+                    <span>健康档案、提醒、RAG 证据联动</span>
+                  </button>
+                  <button class="formation-btn" type="button" data-formation="travel">
+                    <strong>出行编队</strong>
+                    <span>天气、预报、路况与风险联动</span>
+                  </button>
+                  <button class="formation-btn" type="button" data-formation="invest">
+                    <strong>投资编队</strong>
+                    <span>环境信号、行业影响、记忆偏好联动</span>
+                  </button>
+                </div>
+              </div>
+              <div class="ops-main">
+                <div class="ops-card ops-mount" id="opsControlMount"></div>
+                <div class="ops-card ops-mount" id="opsTimelineMount"></div>
+              </div>
+            </div>
+            <div style="display:none;">
+              <div class="step-head">
+                <div>
+                  <div class="step-title">Decision Orchestration</div>
+                  <div class="step-sub">用户问题 → 意图解析 → 规则/LLM 输出</div>
+                </div>
+              </div>
+              <div class="step-grid">
+                <div class="step-panel">
+                  <label for="queryText">问题</label>
+                  <textarea id="queryText">明早 7 点在上海骑行通勤，要带雨衣吗？</textarea>
+                  <div class="row">
+                    <div>
+                      <label for="querySession">sessionId</label>
+                      <input id="querySession" value="demo-session" />
+                    </div>
+                    <div>
+                      <label for="queryCity">城市</label>
+                      <input id="queryCity" placeholder="上海" />
+                    </div>
+                    <div>
+                      <label for="queryAdcode">行政区编码</label>
+                      <input id="queryAdcode" placeholder="310000" />
+                    </div>
+                    <div>
+                      <label for="queryTime">时间（ISO）</label>
+                      <input id="queryTime" placeholder="2026-03-16T07:00:00+08:00" />
+                    </div>
+                  </div>
+                  <label>场景速选</label>
+                  <div class="pill-group" id="scenarioPills">
+                    <label class="pill"><input type="radio" name="scenario" value="" checked /> 自动</label>
+                    <label class="pill"><input type="radio" name="scenario" value="commute_decision" /> 通勤</label>
+                    <label class="pill"><input type="radio" name="scenario" value="sport_decision" /> 运动</label>
+                    <label class="pill"><input type="radio" name="scenario" value="umbrella_decision" /> 带伞</label>
+                    <label class="pill"><input type="radio" name="scenario" value="clothing_decision" /> 穿衣</label>
+                    <label class="pill"><input type="radio" name="scenario" value="travel_decision" /> 出行</label>
+                  </div>
+                  <div class="divider"></div>
+                  <div class="actions">
+                    <button id="queryBtn" type="button">发送决策</button>
+                    <button id="mockQueryBtn" class="secondary" type="button">示例响应</button>
+                    <button id="voiceStartBtn" class="secondary" type="button">语音输入</button>
+                    <button id="voiceStopBtn" class="secondary" type="button">停止录音</button>
+                    <button id="voiceSpeakBtn" class="secondary" type="button">播报结果</button>
+                  </div>
+                  <div id="voiceStatus" class="notice">语音状态：待机</div>
+                </div>
+                <div class="step-panel">
+                  <div class="notice">决策结果/证据/记忆与健康提醒会串联展示。</div>
+                  <div class="stat-grid" id="decisionStats"></div>
+                  <pre class="output" id="queryResult">等待请求...</pre>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="story-step story-hidden" id="health">
+            <div class="step-head">
+              <div>
+                <div class="step-title">Health Profile</div>
+                <div class="step-sub">健康档案 → 个性化提醒</div>
+              </div>
+            </div>
+            <div class="step-grid">
+              <div class="step-panel">
+                <label for="healthUser">用户 ID</label>
+                <input id="healthUser" value="user-001" />
+                <label>既往健康状况</label>
+                <div class="pill-group" id="conditionPills">
+                  <label class="pill"><input type="checkbox" value="rheumatism" /> 风湿/关节不适</label>
+                  <label class="pill"><input type="checkbox" value="asthma" /> 哮喘/呼吸敏感</label>
+                  <label class="pill"><input type="checkbox" value="allergy" /> 过敏性鼻炎</label>
+                  <label class="pill"><input type="checkbox" value="photosensitivity" /> 光敏/皮肤敏感</label>
+                  <label class="pill"><input type="checkbox" value="cardio" /> 心血管风险</label>
+                </div>
+                <label for="healthNote">敏感备注</label>
+                <textarea id="healthNote" placeholder="例如：湿冷敏感、冬天关节疼痛"></textarea>
+                <div class="actions">
+                  <button id="saveProfileBtn">保存档案</button>
+                  <button id="analyzeProfileBtn" class="secondary">分析画像</button>
+                  <button id="clearProfileBtn" class="secondary">删除档案</button>
+                </div>
+              </div>
+              <div class="step-panel">
+                <div class="health-summary" id="healthSummary"></div>
+                <div class="health-summary" id="profileSummary"></div>
+                <div class="output" id="healthResult">等待操作...</div>
+                <p class="notice">仅供参考，非医疗建议。真实接口尚未实现，当前为模拟数据。</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="story-step story-hidden" id="weather">
+            <div class="step-head">
+              <div>
+                <div class="step-title">Data Intake</div>
+                <div class="step-sub">环境数据输入/代理</div>
+              </div>
+            </div>
+            <div class="step-grid">
+              <div class="step-panel">
+                <div class="row">
+                  <div>
+                    <label for="weatherCity">城市</label>
+                    <input id="weatherCity" placeholder="北京" />
+                  </div>
+                  <div>
+                    <label for="weatherAdcode">行政区编码</label>
+                    <input id="weatherAdcode" placeholder="110000" />
+                  </div>
+                  <div>
+                    <label for="weatherLang">语言</label>
+                    <select id="weatherLang">
+                      <option value="zh">zh</option>
+                      <option value="en">en</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="toggle-row">
+                  <label class="toggle"><input type="checkbox" id="extended" /> extended</label>
+                  <label class="toggle"><input type="checkbox" id="forecast" /> forecast</label>
+                  <label class="toggle"><input type="checkbox" id="hourly" /> hourly</label>
+                  <label class="toggle"><input type="checkbox" id="minutely" /> minutely</label>
+                  <label class="toggle"><input type="checkbox" id="indices" /> indices</label>
+                </div>
+                <div class="actions">
+                  <button id="weatherBtn">查询</button>
+                  <button id="mockWeatherBtn" class="secondary">模拟天气</button>
+                </div>
+              </div>
+              <div class="step-panel">
+                <pre class="output" id="weatherResult">等待请求...</pre>
+              </div>
+            </div>
+          </section>
+
+          <section class="story-step story-hidden" id="memory">
+            <div class="step-head">
+              <div>
+                <div class="step-title">Context Memory</div>
+                <div class="step-sub">会话记忆回溯与清理</div>
+              </div>
+            </div>
+            <div class="step-grid">
+              <div class="step-panel">
+                <label for="memorySession">sessionId</label>
+                <input id="memorySession" value="demo-session" />
+                <div class="actions">
+                  <button id="memoryFetchBtn">读取记忆</button>
+                  <button id="memoryClearBtn" class="secondary">清理记忆</button>
+                </div>
+              </div>
+              <div class="step-panel">
+                <pre class="output" id="memoryResult">等待请求...</pre>
+              </div>
+            </div>
+          </section>
+
+          <section class="story-step story-hidden" id="forecast">
+            <div class="step-head">
+              <div>
+                <div class="step-title">Forecast & AQI</div>
+                <div class="step-sub">预报/空气质量/趋势</div>
+              </div>
+            </div>
+            <div class="step-grid">
+              <div class="step-panel">
+                <div class="row">
+                  <div>
+                    <label for="forecastLat">纬度</label>
+                    <input id="forecastLat" value="31.23" />
+                  </div>
+                  <div>
+                    <label for="forecastLon">经度</label>
+                    <input id="forecastLon" value="121.53" />
+                  </div>
+                  <div>
+                    <label for="forecastHours">小时数</label>
+                    <input id="forecastHours" value="24" />
+                  </div>
+                  <div>
+                    <label for="forecastDays">天数</label>
+                    <input id="forecastDays" value="7" />
+                  </div>
+                </div>
+                <div class="actions">
+                  <button id="forecastBtn">获取预报</button>
+                  <button id="mockForecastBtn" class="secondary">模拟预报</button>
+                </div>
+                <div class="divider"></div>
+                <div class="row">
+                  <div>
+                    <label for="aqiLat">AQI 纬度</label>
+                    <input id="aqiLat" value="31.23" />
+                  </div>
+                  <div>
+                    <label for="aqiLon">AQI 经度</label>
+                    <input id="aqiLon" value="121.53" />
+                  </div>
+                </div>
+                <div class="actions">
+                  <button id="aqiBtn">获取 AQI</button>
+                  <button id="mockAqiBtn" class="secondary">模拟 AQI</button>
+                </div>
+              </div>
+              <div class="step-panel">
+                <pre class="output" id="forecastResult">等待请求...</pre>
+                <pre class="output" id="aqiResult">等待请求...</pre>
+              </div>
+            </div>
+          </section>
+
+          <section class="story-step story-hidden" id="stocks">
+            <div class="step-head">
+              <div>
+                <div class="step-title">Market Impact</div>
+                <div class="step-sub">环境联动对行业影响</div>
+              </div>
+            </div>
+            <div class="step-grid">
+              <div class="step-panel">
+                <div class="row">
+                  <div>
+                    <label for="stockRegion">区域</label>
+                    <input id="stockRegion" value="华东" />
+                  </div>
+                  <div>
+                    <label for="stockSignal">环境信号</label>
+                    <input id="stockSignal" value="雨天 + 湿冷 + 通勤压力" />
+                  </div>
+                  <div>
+                    <label for="stockHorizon">时间窗</label>
+                    <input id="stockHorizon" value="24h" />
+                  </div>
+                </div>
+                <div class="actions">
+                  <button id="stocksBtn">生成分析</button>
+                  <button id="mockStocksBtn" class="secondary">模拟分析</button>
+                </div>
+                <div class="impact-bar"><span id="stocksBar"></span></div>
+                <div class="impact-chip" id="stocksBias">谨慎偏空</div>
+                <ul class="wall-list" id="stocksList"></ul>
+              </div>
+              <div class="step-panel">
+                <pre class="output" id="stocksResult">等待分析...</pre>
+                <p class="notice">仅供参考，不构成投资建议。当前分析为模拟结果。</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="story-step story-hidden" id="tasks">
+            <div class="step-head">
+              <div>
+                <div class="step-title">Task Loop</div>
+                <div class="step-sub">提醒与行动闭环</div>
+              </div>
+            </div>
+            <div class="step-grid">
+              <div class="step-panel">
+                <div class="row">
+                  <div>
+                    <label for="taskType">任务类型</label>
+                    <select id="taskType">
+                      <option value="commute">通勤提醒</option>
+                      <option value="sport">运动计划</option>
+                      <option value="health">健康提醒</option>
+                      <option value="travel">出行提醒</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label for="taskTime">计划时间</label>
+                    <input id="taskTime" value="2026-03-16T07:00:00+08:00" />
+                  </div>
+                  <div>
+                    <label for="taskPriority">优先级 (1-10)</label>
+                    <input id="taskPriority" value="5" />
+                  </div>
+                </div>
+                <label for="taskMeta">元数据 (JSON)</label>
+                <textarea id="taskMeta">{ "location": { "lat": 31.23, "lon": 121.53 } }</textarea>
+                <div class="actions">
+                  <button id="taskBtn">创建任务</button>
+                  <button id="mockTaskBtn" class="secondary">模拟任务</button>
+                </div>
+              </div>
+              <div class="step-panel">
+                <pre class="output" id="taskResult">等待请求...</pre>
+              </div>
+            </div>
+          </section>
+
+          <section class="story-step story-hidden" id="rag">
+            <div class="step-head">
+              <div>
+                <div class="step-title">RAG Evidence</div>
+                <div class="step-sub">知识检索与证据引用</div>
+              </div>
+            </div>
+            <div class="step-grid">
+              <div class="step-panel">
+                <label for="ragQuery">检索问题</label>
+                <input id="ragQuery" value="潮湿天气 风湿关节痛 建议" />
+                <div class="actions">
+                  <button id="ragBtn">获取证据</button>
+                  <button id="mockRagBtn" class="secondary">模拟证据</button>
+                </div>
+              </div>
+              <div class="step-panel">
+                <table class="table" id="ragTable">
+                  <thead>
+                    <tr>
+                      <th>标题</th>
+                      <th>标签</th>
+                      <th>分数</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+                <p class="notice">RAG 接口尚未独立暴露，此处为模拟或从 /query 返回的 evidence。</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="story-step story-hidden" id="scenes">
+            <div class="step-head">
+              <div>
+                <div class="step-title">Scenario Library</div>
+                <div class="step-sub">统一场景知识映射</div>
+              </div>
+            </div>
+            <div class="step-grid">
+              <div class="step-panel">
+                <div class="scene-grid" id="sceneGrid"></div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      const qs = (id) => document.getElementById(id);
+      const $ = (selector, root = document) => root.querySelector(selector);
+      const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
+
+      const state = {
+        useMock: false,
+        mergeMock: false,
+        showTrace: true,
+        healthProfile: null,
+        calls: 0,
+        serviceStatus: {
+          api: "待检测",
+          llm: "未知",
+        },
+      };
+
+      const setBusy = (btn, busy) => {
+        btn.disabled = busy;
+        btn.textContent = busy ? "请求中..." : btn.dataset.label;
+      };
+
+      const pretty = (data) => JSON.stringify(data, null, 2);
+
+      const speechApi = {
+        recognition: null,
+        listening: false,
+        supportedAsr: Boolean(window.SpeechRecognition || window.webkitSpeechRecognition),
+        supportedTts: Boolean(window.speechSynthesis && window.SpeechSynthesisUtterance),
+        autoSpeak: true,
+        lastDecisionText: "",
+      };
+
+      const setVoiceStatus = (text) => {
+        const ids = ["voiceStatus", "wallVoiceStatus"];
+        ids.forEach((id) => {
+          const el = qs(id);
+          if (el) el.textContent = `语音状态：${text}`;
+        });
+      };
+
+      const stopVoicePlayback = () => {
+        if (window.speechSynthesis) {
+          window.speechSynthesis.cancel();
+        }
+      };
+
+      const speakText = (text) => {
+        if (!speechApi.supportedTts || !text) return;
+        stopVoicePlayback();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = "zh-CN";
+        utterance.rate = 1;
+        utterance.pitch = 1;
+        utterance.onstart = () => setVoiceStatus("正在播报");
+        utterance.onend = () => setVoiceStatus("播报完成");
+        utterance.onerror = () => setVoiceStatus("语音播报失败");
+        window.speechSynthesis.speak(utterance);
+      };
+
+      const getDecisionSpeechText = (data) => {
+        if (!data) return "";
+        const location = data?.entities?.location?.name ? `${data.entities.location.name}，` : "";
+        const summary = data?.forecastSummary ? `${data.forecastSummary}。` : "";
+        const advice = data?.decision?.advice || "";
+        const actions = (data?.decision?.actions || []).slice(0, 2).join("，");
+        return [location + summary + advice, actions ? `建议动作：${actions}。` : ""].filter(Boolean).join("");
+      };
+
+      const ensureRecognition = () => {
+        if (!speechApi.supportedAsr) return null;
+        if (speechApi.recognition) return speechApi.recognition;
+        const RecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new RecognitionCtor();
+        recognition.lang = "zh-CN";
+        recognition.continuous = false;
+        recognition.interimResults = true;
+
+        recognition.onstart = () => {
+          speechApi.listening = true;
+          setVoiceStatus("正在监听，请开始说话");
+        };
+
+        recognition.onresult = (event) => {
+          let finalText = "";
+          for (let i = event.resultIndex; i < event.results.length; i += 1) {
+            const transcript = event.results[i][0]?.transcript || "";
+            if (event.results[i].isFinal) finalText += transcript;
+          }
+          if (finalText && qs("queryText")) {
+            qs("queryText").value = finalText.trim();
+            setVoiceStatus(`已识别：${finalText.trim()}`);
+            callQuery(false);
+          }
+        };
+
+        recognition.onerror = (event) => {
+          speechApi.listening = false;
+          const message = event?.error === "not-allowed" ? "麦克风权限被拒绝" : `识别失败: ${event?.error || "unknown"}`;
+          setVoiceStatus(message);
+        };
+
+        recognition.onend = () => {
+          speechApi.listening = false;
+          if (!qs("queryText")?.value.trim()) {
+            setVoiceStatus("监听结束，未识别到有效语音");
+          }
+        };
+
+        speechApi.recognition = recognition;
+        return recognition;
+      };
+
+      const startVoiceInput = () => {
+        const recognition = ensureRecognition();
+        if (!recognition) {
+          setVoiceStatus("当前浏览器不支持语音识别");
+          return;
+        }
+        if (speechApi.listening) return;
+        stopVoicePlayback();
+        if (qs("queryText")) qs("queryText").value = "";
+        recognition.start();
+      };
+
+      const stopVoiceInput = () => {
+        if (speechApi.recognition && speechApi.listening) {
+          speechApi.recognition.stop();
+          setVoiceStatus("已停止监听");
+        }
+      };
+
+      const safeJson = async (response) => {
+        const text = await response.text();
+        try {
+          const payload = JSON.parse(text);
+          if (!response.ok) {
+            const message =
+              payload?.error?.message ||
+              payload?.detail?.message ||
+              payload?.detail?.error ||
+              payload?.detail ||
+              payload?.message ||
+              `HTTP ${response.status}`;
+            throw new Error(typeof message === "string" ? message : pretty(message));
+          }
+          return payload;
+        } catch (err) {
+          if (!response.ok) {
+            throw new Error(text || `HTTP ${response.status}`);
+          }
+          return { raw: text };
+        }
+      };
+
+      const toastResult = (el, payload) => {
+        el.textContent = pretty(payload);
+      };
+
+      const addCapEvent = (service, status, detail = "") => {
+        const timeline = qs("capTimeline");
+        if (!timeline) return;
+        const item = document.createElement("div");
+        item.className = "cap-event";
+        const now = new Date().toLocaleTimeString("zh-CN", { hour12: false });
+        item.innerHTML = `<strong>${now}</strong> [${service}] ${status}${detail ? ` · ${detail}` : ""}`;
+        timeline.prepend(item);
+        while (timeline.children.length > 24) timeline.removeChild(timeline.lastChild);
+        state.calls += 1;
+        const counter = qs("capCounter");
+        if (counter) counter.textContent = `${state.calls} 次`;
+      };
+
+      const setServiceTag = (key, label, isOk = true) => {
+        if (key === "api") {
+          const tag = qs("capApiTag");
+          if (!tag) return;
+          tag.textContent = `API ${label}`;
+          tag.style.borderColor = isOk ? "rgba(82,196,26,0.55)" : "rgba(255,77,79,0.55)";
+          tag.style.color = isOk ? "var(--ink)" : "#ffd8d9";
+        }
+        if (key === "llm") {
+          const tag = qs("capLlmTag");
+          if (!tag) return;
+          tag.textContent = `LLM ${label}`;
+          tag.style.borderColor = isOk ? "rgba(82,196,26,0.55)" : "rgba(255,77,79,0.55)";
+          tag.style.color = isOk ? "var(--ink)" : "#ffd8d9";
+        }
+      };
+
+      const wallInputs = () => ({
+        query: qs("wallQueryText")?.value.trim() || "明早 7 点在上海骑行通勤，要带雨衣吗？",
+        sessionId: qs("wallSessionId")?.value.trim() || "demo-session",
+        city: qs("wallCityInput")?.value.trim() || "上海",
+        adcode: qs("wallAdcodeInput")?.value.trim() || "310000",
+        time: qs("wallTimeInput")?.value.trim() || "2026-03-16T07:00:00+08:00",
+        userId: qs("wallUserId")?.value.trim() || "user-001",
+        ragQuery: qs("wallRagQuery")?.value.trim() || "潮湿天气 风湿 关节痛 建议",
+        signal: qs("wallSignal")?.value.trim() || "雨天+湿冷+通勤压力",
+        region: qs("wallRegion")?.value.trim() || "华东",
+        lat: qs("wallLat")?.value.trim() || "31.23",
+        lon: qs("wallLon")?.value.trim() || "121.53",
+        taskTime: qs("wallTaskTime")?.value.trim() || new Date().toISOString(),
+        taskType: qs("wallTaskType")?.value || "commute",
+        conditions: (qs("wallConditions")?.value || "rheumatism")
+          .split(",")
+          .map((v) => v.trim())
+          .filter(Boolean),
+        healthNote: qs("wallHealthNote")?.value.trim() || "",
+      });
+
+      const toastWall = (payload) => {
+        const output = qs("wallOutput");
+        if (output) output.textContent = pretty(payload);
+      };
+
+      const scenarioMeta = [
+        { name: "通勤", hint: "雨天风大时建议提前出门", risk: "medium" },
+        { name: "运动", hint: "空气质量 < 100 更适合跑步", risk: "low" },
+        { name: "洗车", hint: "未来 12 小时无降水最佳", risk: "low" },
+        { name: "出行", hint: "关注目的地温差与降雨", risk: "medium" },
+        { name: "风湿", hint: "湿冷天气注意关节保暖", risk: "medium" },
+        { name: "哮喘", hint: "AQI 偏高减少户外强度", risk: "high" },
+        { name: "光敏", hint: "UV>7 需加强防晒", risk: "medium" },
+        { name: "高温", hint: "体感温度极端需减少曝晒", risk: "high" },
+      ];
+
+      const renderScenes = () => {
+        const grid = qs("sceneGrid");
+        grid.innerHTML = "";
+        scenarioMeta.forEach((item) => {
+          const div = document.createElement("div");
+          div.className = "scene";
+          div.innerHTML = `
+            <strong>${item.name}</strong>
+            <p class="${item.risk === "high" ? "risk-high" : ""}">${item.hint}</p>
+            <span class="tag">${item.risk}</span>
+          `;
+          grid.appendChild(div);
+        });
+      };
+
+      const updateTicker = (data) => {
+        const track = $(".ticker-track");
+        if (!track || !data) return;
+        const riskFlags = data.environment?.riskFlags || ["rain", "wind"];
+        const health = (data.healthAlerts || []).map((item) => item.condition).join(" / ") || "健康提醒待补充";
+        const market = data.marketSignal || "行业信号：物流承压 · 健康需求上升";
+        track.innerHTML = `
+          <span>风险标签：${riskFlags.join(" · ")}</span>
+          <span>健康提醒：${health}</span>
+          <span>城市活跃：出行热度下降 12%</span>
+          <span>${market}</span>
+          <span>风险标签：${riskFlags.join(" · ")}</span>
+          <span>健康提醒：${health}</span>
+        `;
+      };
+
+      const mock = {
+        query: () => ({
+          intent: "commute_decision",
+          entities: { time: "2026-03-16T07:00:00+08:00", mode: "cycling", location: { name: "上海" } },
+          forecastSummary: "小雨，12.2℃(体感10.8℃)，东风4级，湿度82%，AQI 68",
+          decision: {
+            advice: "建议带雨衣并提前出门，路面湿滑注意安全。",
+            riskLevel: "medium",
+            reasons: ["可能有降水", "风力偏大", "湿度较高"],
+            actions: ["携带雨具", "检查车灯与刹车", "注意防风保暖"],
+          },
+          nlu: { intent: "commute_decision", slots: { city: "上海", date: "tomorrow", activity: "commute" } },
+          environment: {
+            time: "2026-03-16T07:00:00+08:00",
+            timeBucket: "morning",
+            weather: {
+              status: "小雨",
+              temperature: 12.2,
+              feelsLike: 10.8,
+              humidity: 82,
+              windDirection: "东风",
+              windPower: "4级",
+              precipitation: 1.2,
+              uv: 1.5,
+              aqi: 68,
+            },
+            comfortIndex: 62,
+            riskFlags: ["rain", "wind"],
+            sources: ["weather", "time"],
+          },
+          evidence: [
+            {
+              id: "rheumatism_humidity",
+              title: "潮湿天气与关节不适",
+              content: "湿冷天气可能加重关节不适，建议注意保暖、防潮。",
+              tags: ["health", "rheumatism"],
+              domain: "health",
+              score: 0.81,
+            },
+            {
+              id: "commute_rain",
+              title: "雨天通勤注意事项",
+              content: "降雨时路面湿滑，应降低速度并提前出门。",
+              tags: ["commute", "safety"],
+              domain: "travel",
+              score: 0.72,
+            },
+          ],
+          memory: [
+            { role: "user", content: "明早 7 点在上海骑行通勤，要带雨衣吗？", timestamp: "2026-03-15T21:10:00+00:00" },
+            { role: "assistant", content: "建议带雨衣并提前出门。", timestamp: "2026-03-15T21:10:01+00:00" },
+          ],
+          healthAlerts: [
+            {
+              condition: "rheumatism",
+              riskLevel: "medium",
+              reasons: ["湿度 82%，体感温度偏低"],
+              actions: ["注意关节保暖", "避免长时间潮湿环境"],
+            },
+          ],
+          healthRiskLevel: "medium",
+          followUps: ["是否需要建立健康档案，以便提供更准确的提醒？"],
+          sources: ["mock:weather", "mock:health"],
+          traceId: "mock-trace-001",
+        }),
+        weather: () => ({
+          status: "ok",
+          city: "上海",
+          weather: "小雨",
+          temperature: 12.2,
+          feels_like: 10.8,
+          humidity: 82,
+          wind_direction: "东风",
+          wind_power: "4级",
+          precipitation: 1.2,
+          uv: 1.5,
+          aqi: 68,
+          updatedAt: "2026-03-16T06:50:00+08:00",
+          source: "mock",
+        }),
+        forecast: () => ({
+          location: { lat: 31.23, lon: 121.53, tz: "Asia/Shanghai" },
+          current: { ts: "2026-03-16T06:50:00+08:00", temp: 12.2, wind: 4, aqi: 68 },
+          hourly: [
+            { ts: "2026-03-16T07:00:00+08:00", temp: 12.1, pop: 0.6 },
+            { ts: "2026-03-16T08:00:00+08:00", temp: 12.4, pop: 0.4 },
+          ],
+          daily: [
+            { date: "2026-03-16", tmin: 10.2, tmax: 15.3, uv: 2 },
+            { date: "2026-03-17", tmin: 9.8, tmax: 16.5, uv: 3 },
+          ],
+          source: "mock",
+          updatedAt: "2026-03-16T06:50:00+08:00",
+        }),
+        aqi: () => ({
+          location: { lat: 31.23, lon: 121.53 },
+          ts: "2026-03-16T06:50:00+08:00",
+          aqi: 68,
+          primary: "PM2.5",
+          source: "mock",
+        }),
+        task: () => ({
+          task_id: 1024,
+          status: "scheduled",
+          nextRun: "2026-03-16T06:30:00+08:00",
+          channel: "push",
+          source: "mock",
+        }),
+        memory: () => [
+          { role: "user", content: "最近总是腿部酸痛", timestamp: "2026-03-15T20:18:00+00:00" },
+          { role: "assistant", content: "已记录健康偏好，将关注湿冷天气提醒。", timestamp: "2026-03-15T20:18:10+00:00" },
+        ],
+        rag: () => [
+          { id: "health_rheumatism", title: "湿冷与关节不适", tags: ["health"], score: 0.82 },
+          { id: "commute_rain", title: "雨天通勤安全提示", tags: ["commute"], score: 0.71 },
+        ],
+        stocks: () => ({
+          region: "华东",
+          updatedAt: "2026-03-16T06:50:00+08:00",
+          weatherSignal: "雨天 + 湿冷",
+          marketBias: "cautious",
+          confidence: 0.62,
+          sectors: [
+            { name: "交通与物流", impact: "negative", reason: "降雨影响运输效率" },
+            { name: "户外零售", impact: "negative", reason: "客流下降" },
+            { name: "医药健康", impact: "positive", reason: "健康需求提升" },
+            { name: "线上服务", impact: "positive", reason: "线上娱乐与配送需求提升" },
+          ],
+          drivers: ["降水", "低温", "风力偏大"],
+          disclaimer: "仅供参考，不构成投资建议。",
+          source: "mock",
+        }),
+      };
+
+      const setPillActive = (group) => {
+        $$(".pill", group).forEach((pill) => {
+          const input = $("input", pill);
+          pill.classList.toggle("active", input.checked);
+        });
+      };
+
+      const bindPills = (groupId) => {
+        const group = qs(groupId);
+        if (!group) return;
+        group.addEventListener("change", () => setPillActive(group));
+        setPillActive(group);
+      };
+
+      const mergeTrace = (data) => {
+        if (!state.showTrace) {
+          if (data && typeof data === "object") {
+            const copy = JSON.parse(JSON.stringify(data));
+            delete copy.traceId;
+            return copy;
+          }
+        }
+        return data;
+      };
+
+      const updateDecisionStats = (data) => {
+        const target = qs("decisionStats");
+        if (!data) return;
+        const items = [
+          { label: "Intent", value: data.intent || "--" },
+          { label: "Risk", value: data.decision?.riskLevel || "--" },
+          { label: "Comfort", value: data.environment?.comfortIndex ?? "--" },
+          { label: "Health", value: data.healthRiskLevel || "--" },
+        ];
+        target.innerHTML = "";
+        items.forEach((item) => {
+          const div = document.createElement("div");
+          div.className = "stat";
+          div.innerHTML = `${item.label}<strong>${item.value}</strong>`;
+          target.appendChild(div);
+        });
+      };
+
+      const updateHealthSummary = (profile, alerts = []) => {
+        const target = qs("healthSummary");
+        target.innerHTML = "";
+        if (!profile) {
+          target.innerHTML = `<div class="health-card"><h4>尚未建立档案</h4><p>保存健康档案后可生成个性化提醒。</p></div>`;
+          return;
+        }
+        const card = document.createElement("div");
+        card.className = "health-card";
+        card.innerHTML = `<h4>健康档案</h4><p>条件：${profile.conditions.join(", ") || "无"}<br/>敏感备注：${profile.note || "无"}</p>`;
+        target.appendChild(card);
+        if (alerts.length) {
+          alerts.forEach((alert) => {
+            const c = document.createElement("div");
+            c.className = "health-card";
+            c.innerHTML = `<h4>${alert.condition}</h4><p>${alert.actions.join("，")}</p>`;
+            target.appendChild(c);
+          });
+        } else {
+          const empty = document.createElement("div");
+          empty.className = "health-card";
+          empty.innerHTML = `<h4>暂无提醒</h4><p>当前环境未触发健康风险。</p>`;
+          target.appendChild(empty);
+        }
+      };
+
+      const updateProfileSummary = (profile) => {
+        const target = qs("profileSummary");
+        if (!target) return;
+        target.innerHTML = "";
+        if (!profile) {
+          target.innerHTML = `<div class="health-card"><h4>用户画像</h4><p>尚未生成画像分析。</p></div>`;
+          return;
+        }
+        const card = document.createElement("div");
+        card.className = "health-card";
+        card.innerHTML = `<h4>用户画像</h4><p>Persona：${profile.persona}<br/>兴趣重心：${profile.top_interest}<br/>风险偏好：${profile.risk_preference}<br/>完整度：${profile.profile_completeness}</p>`;
+        target.appendChild(card);
+        const detail = document.createElement("div");
+        detail.className = "health-card";
+        detail.innerHTML = `<h4>画像摘要</h4><p>${profile.summary}</p><p>标签：${(profile.tags || []).join(" / ") || "无"}</p>`;
+        target.appendChild(detail);
+        const scenarios = document.createElement("div");
+        scenarios.className = "health-card";
+        scenarios.innerHTML = `<h4>偏好场景</h4><p>${(profile.scenario_preferences || [])
+          .map((item) => `${item.scenario} (${item.count})`)
+          .join(" / ") || "暂无足够历史"}</p>`;
+        target.appendChild(scenarios);
+        const strategies = document.createElement("div");
+        strategies.className = "health-card";
+        strategies.innerHTML = `<h4>建议策略</h4><p>${(profile.strategy_recommendations || []).join("<br/>") || "暂无建议"}</p>`;
+        target.appendChild(strategies);
+      };
+
+      const runProfileAnalysis = async () => {
+        const userId = qs("healthUser")?.value.trim() || wallInputs().userId;
+        const response = await fetch(`/api/v1/profile/analyze/${encodeURIComponent(userId)}`);
+        const data = await safeJson(response);
+        updateProfileSummary(data);
+        toastResult(qs("healthResult"), data);
+        addCapEvent("profile-analysis", "OK", `${data.persona}`);
+        return data;
+      };
+
+      updateProfileSummary(null);
+
+      const callWithFallback = async (fn, fallback) => {
+        if (state.useMock) return fallback();
+        try {
+          return await fn();
+        } catch (err) {
+          if (state.mergeMock) {
+            return fallback();
+          }
+          throw err;
+        }
+      };
+
+      const runHealthAlerts = async () => {
+        const wall = wallInputs();
+        const response = await fetch(`/api/v1/health/alerts/${encodeURIComponent(wall.userId)}`);
+        const data = await safeJson(response);
+        updateHealthSummary(state.healthProfile || { user_id: wall.userId, conditions: wall.conditions, note: wall.healthNote }, data.alerts || []);
+        if (data.riskLevel) {
+          qs("wallHealth").textContent = data.riskLevel === "high" ? "高风险" : data.riskLevel === "medium" ? "中风险" : "低风险";
+        }
+        toastWall({ service: "health_alerts", data });
+        addCapEvent("health-alerts", "OK", `risk=${data.riskLevel || "--"}`);
+        return data;
+      };
+
+      const runHealthProfileUpsert = async () => {
+        try {
+          await saveProfile();
+        } catch (err) {
+          addCapEvent("health-profile", "ERROR", String(err));
+          toastWall({ service: "health-profile", error: String(err) });
+        }
+      };
+
+      const runHealthProfileLoad = async () => {
+        try {
+          const wall = wallInputs();
+          const response = await fetch(`/api/v1/health/profile/${encodeURIComponent(wall.userId)}`);
+          const data = await safeJson(response);
+          state.healthProfile = data;
+          updateHealthSummary(data, []);
+          toastResult(qs("healthResult"), data);
+          toastWall({ service: "health_profile_get", data });
+          addCapEvent("health-profile", "OK", `loaded ${wall.userId}`);
+        } catch (err) {
+          addCapEvent("health-profile", "ERROR", String(err));
+          toastWall({ service: "health-profile-get", error: String(err) });
+        }
+      };
+
+      const runHealthProfileDelete = async () => {
+        try {
+          await clearProfile();
+        } catch (err) {
+          addCapEvent("health-profile", "ERROR", String(err));
+          toastWall({ service: "health-profile-delete", error: String(err) });
+        }
+      };
+
+      const callQuery = async (forceMock = false) => {
+        const btn = qs(forceMock ? "mockQueryBtn" : "queryBtn");
+        setBusy(btn, true);
+        const wall = wallInputs();
+        const payload = { query: qs("queryText")?.value.trim() || wall.query };
+        const sessionId = qs("querySession")?.value.trim() || wall.sessionId;
+        const city = qs("queryCity")?.value.trim() || wall.city;
+        const adcode = qs("queryAdcode")?.value.trim() || wall.adcode;
+        const time = qs("queryTime")?.value.trim() || wall.time;
+        const scenario = $("input[name='scenario']:checked")?.value;
+        if (sessionId) payload.sessionId = sessionId;
+        if (city) payload.city = city;
+        if (adcode) payload.adcode = adcode;
+        if (time) payload.time = time;
+        if (scenario) payload.scenario = scenario;
+
+        const runRequest = async () => {
+          const response = await fetch("/api/v1/query", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          return await safeJson(response);
+        };
+
+        try {
+          const data = forceMock ? mock.query() : await callWithFallback(runRequest, mock.query);
+          updateDecisionStats(data);
+          updateHealthSummary(state.healthProfile, data.healthAlerts || []);
+          updateWall(data);
+          toastResult(qs("queryResult"), mergeTrace(data));
+          toastWall({ service: "query", data: mergeTrace(data) });
+          speechApi.lastDecisionText = getDecisionSpeechText(data);
+          if (!forceMock && speechApi.autoSpeak) {
+            speakText(speechApi.lastDecisionText);
+          }
+          setServiceTag("api", "在线", true);
+          setServiceTag("llm", "在线", true);
+          addCapEvent("query", "OK", `intent=${data.intent || "--"}`);
+          if (data.evidence) renderRagTable(data.evidence);
+        } catch (err) {
+          setServiceTag("api", "异常", false);
+          setServiceTag("llm", "异常", false);
+          addCapEvent("query", "ERROR", String(err));
+          toastResult(qs("queryResult"), { error: String(err) });
+          toastWall({ service: "query", error: String(err) });
+          setVoiceStatus(`请求失败：${String(err)}`);
+        } finally {
+          setBusy(btn, false);
+        }
+      };
+
+      const callWeather = async (forceMock = false) => {
+        const btn = qs(forceMock ? "mockWeatherBtn" : "weatherBtn");
+        setBusy(btn, true);
+        const params = new URLSearchParams();
+        const wall = wallInputs();
+        const city = qs("weatherCity")?.value.trim() || wall.city;
+        const adcode = qs("weatherAdcode")?.value.trim() || wall.adcode;
+        const lang = qs("weatherLang")?.value || "zh";
+        if (city) params.set("city", city);
+        if (adcode) params.set("adcode", adcode);
+        params.set("lang", lang);
+        ["extended", "forecast", "hourly", "minutely", "indices"].forEach((key) => {
+          const el = qs(key);
+          if (el?.checked) params.set(key, "true");
+        });
+        const runRequest = async () => {
+          const response = await fetch(`/api/v1/misc/weather?${params.toString()}`);
+          return await safeJson(response);
+        };
+        try {
+          const data = forceMock ? mock.weather() : await callWithFallback(runRequest, mock.weather);
+          toastResult(qs("weatherResult"), mergeTrace(data));
+          toastWall({ service: "weather", data: mergeTrace(data) });
+          addCapEvent("weather", "OK", `${data.weather || "--"} · AQI ${data.aqi ?? "--"}`);
+          updateWall({
+            entities: { location: { name: data.city || "上海" } },
+            environment: {
+              time: data.updatedAt || "2026-03-16T06:50:00+08:00",
+              weather: {
+                status: data.weather,
+                feelsLike: data.feels_like,
+                aqi: data.aqi,
+                humidity: data.humidity,
+              },
+            },
+            decision: { riskLevel: "medium" },
+            healthAlerts: [],
+          });
+        } catch (err) {
+          addCapEvent("weather", "ERROR", String(err));
+          toastResult(qs("weatherResult"), { error: String(err) });
+          toastWall({ service: "weather", error: String(err) });
+        } finally {
+          setBusy(btn, false);
+        }
+      };
+
+      const callMemory = async (action, forceMock = false) => {
+        const btn = qs(action === "fetch" ? "memoryFetchBtn" : "memoryClearBtn");
+        setBusy(btn, true);
+        const wall = wallInputs();
+        const sessionId = qs("memorySession")?.value.trim() || wall.sessionId;
+        const runRequest = async () => {
+          const response = await fetch(`/api/v1/memory/${sessionId}`, {
+            method: action === "fetch" ? "GET" : "DELETE",
+          });
+          return await safeJson(response);
+        };
+        try {
+          const data = forceMock ? mock.memory() : await callWithFallback(runRequest, mock.memory);
+          toastResult(qs("memoryResult"), mergeTrace(data));
+          toastWall({ service: `memory_${action}`, data: mergeTrace(data) });
+          addCapEvent("memory", "OK", `${action} · ${Array.isArray(data) ? data.length : 1} 条`);
+        } catch (err) {
+          addCapEvent("memory", "ERROR", String(err));
+          toastResult(qs("memoryResult"), { error: String(err) });
+          toastWall({ service: `memory_${action}`, error: String(err) });
+        } finally {
+          setBusy(btn, false);
+        }
+      };
+
+      const callForecast = async (forceMock = false) => {
+        const btn = qs(forceMock ? "mockForecastBtn" : "forecastBtn");
+        setBusy(btn, true);
+        const wall = wallInputs();
+        const params = new URLSearchParams();
+        params.set("lat", qs("forecastLat")?.value.trim() || wall.lat);
+        params.set("lon", qs("forecastLon")?.value.trim() || wall.lon);
+        params.set("hours", qs("forecastHours")?.value.trim() || "24");
+        params.set("days", qs("forecastDays")?.value.trim() || "7");
+        const runRequest = async () => {
+          const response = await fetch(`/api/v1/forecast?${params.toString()}`);
+          return await safeJson(response);
+        };
+        try {
+          const data = forceMock ? mock.forecast() : await callWithFallback(runRequest, mock.forecast);
+          toastResult(qs("forecastResult"), mergeTrace(data));
+          toastWall({ service: "forecast", data: mergeTrace(data) });
+          addCapEvent("forecast", "OK", `${data.hourly?.length || 0}h/${data.daily?.length || 0}d`);
+        } catch (err) {
+          addCapEvent("forecast", "ERROR", String(err));
+          toastResult(qs("forecastResult"), { error: String(err) });
+          toastWall({ service: "forecast", error: String(err) });
+        } finally {
+          setBusy(btn, false);
+        }
+      };
+
+      const callAqi = async (forceMock = false) => {
+        const btn = qs(forceMock ? "mockAqiBtn" : "aqiBtn");
+        setBusy(btn, true);
+        const wall = wallInputs();
+        const params = new URLSearchParams();
+        params.set("lat", qs("aqiLat")?.value.trim() || wall.lat);
+        params.set("lon", qs("aqiLon")?.value.trim() || wall.lon);
+        const runRequest = async () => {
+          const response = await fetch(`/api/v1/aqi?${params.toString()}`);
+          return await safeJson(response);
+        };
+        try {
+          const data = forceMock ? mock.aqi() : await callWithFallback(runRequest, mock.aqi);
+          toastResult(qs("aqiResult"), mergeTrace(data));
+          toastWall({ service: "aqi", data: mergeTrace(data) });
+          updateGauge(data.aqi ?? 68);
+          qs("wallAqi").textContent = data.aqi ?? 68;
+          addCapEvent("aqi", "OK", `AQI ${data.aqi ?? "--"}`);
+        } catch (err) {
+          addCapEvent("aqi", "ERROR", String(err));
+          toastResult(qs("aqiResult"), { error: String(err) });
+          toastWall({ service: "aqi", error: String(err) });
+        } finally {
+          setBusy(btn, false);
+        }
+      };
+
+      const callTask = async (forceMock = false) => {
+        const btn = qs(forceMock ? "mockTaskBtn" : "taskBtn");
+        setBusy(btn, true);
+        const wall = wallInputs();
+        let metadata = {};
+        try {
+          metadata = JSON.parse(qs("taskMeta")?.value || "{}");
+        } catch (err) {
+          metadata = { raw: qs("taskMeta")?.value || "" };
+        }
+        const payload = {
+          type: qs("taskType")?.value || wall.taskType,
+          scheduled_time: qs("taskTime")?.value.trim() || wall.taskTime,
+          priority: Number(qs("taskPriority")?.value || 5),
+          metadata,
+        };
+        const runRequest = async () => {
+          const response = await fetch("/api/v1/tasks", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          return await safeJson(response);
+        };
+        try {
+          const data = forceMock ? mock.task() : await callWithFallback(runRequest, mock.task);
+          toastResult(qs("taskResult"), mergeTrace(data));
+          toastWall({ service: "task", data: mergeTrace(data) });
+          const wallTasks = qs("wallTasks");
+          if (wallTasks) {
+            const li = document.createElement("li");
+            li.textContent = `${payload.scheduled_time.slice(11, 16)} ${payload.type} 任务：${data.status || "scheduled"}`;
+            wallTasks.prepend(li);
+            while (wallTasks.children.length > 6) wallTasks.removeChild(wallTasks.lastChild);
+          }
+          addCapEvent("task", "OK", `${payload.type} · ${data.status || "--"}`);
+        } catch (err) {
+          addCapEvent("task", "ERROR", String(err));
+          toastResult(qs("taskResult"), { error: String(err) });
+          toastWall({ service: "task", error: String(err) });
+        } finally {
+          setBusy(btn, false);
+        }
+      };
+
+      const renderRagTable = (items) => {
+        const body = qs("ragTable").querySelector("tbody");
+        body.innerHTML = "";
+        (items || []).forEach((item) => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${item.title || item.id}</td>
+            <td>${(item.tags || []).join(", ")}</td>
+            <td>${item.score ?? "--"}</td>
+          `;
+          body.appendChild(row);
+        });
+      };
+
+      const callRag = async (forceMock = false) => {
+        const btn = qs(forceMock ? "mockRagBtn" : "ragBtn");
+        setBusy(btn, true);
+        try {
+          const wall = wallInputs();
+          const runRequest = async () => {
+            const params = new URLSearchParams();
+            params.set("query", wall.ragQuery);
+            const response = await fetch(`/api/v1/rag/evidence?${params.toString()}`);
+            return await safeJson(response);
+          };
+          const payload = forceMock ? { query: wall.ragQuery, items: mock.rag() } : await callWithFallback(runRequest, () => ({ query: wall.ragQuery, items: mock.rag() }));
+          const data = Array.isArray(payload) ? payload : payload.items || [];
+          renderRagTable(data);
+          toastWall({ service: "rag", data: payload });
+          addCapEvent("rag", "OK", `${data.length} 条证据`);
+        } finally {
+          setBusy(btn, false);
+        }
+      };
+
+      const saveProfile = async () => {
+        const wall = wallInputs();
+        const conditions = $$("#conditionPills input:checked").map((input) => input.value);
+        const payload = {
+          user_id: qs("healthUser")?.value.trim() || wall.userId,
+          conditions: conditions.length ? conditions : wall.conditions,
+          note: qs("healthNote")?.value.trim() || wall.healthNote,
+          consent: true,
+          sensitivity: {},
+        };
+        const response = await fetch("/api/v1/health/profile", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const data = await safeJson(response);
+        state.healthProfile = data;
+        updateHealthSummary(data, []);
+        toastResult(qs("healthResult"), data);
+        toastWall({ service: "health_profile_upsert", data });
+        addCapEvent("health-profile", "OK", `user=${payload.user_id}`);
+      };
+
+      const clearProfile = async () => {
+        const wall = wallInputs();
+        const userId = qs("healthUser")?.value.trim() || wall.userId;
+        const response = await fetch(`/api/v1/health/profile/${encodeURIComponent(userId)}`, { method: "DELETE" });
+        const data = await safeJson(response);
+        state.healthProfile = null;
+        updateHealthSummary(null, []);
+        toastResult(qs("healthResult"), data);
+        toastWall({ service: "health_profile_delete", data });
+        addCapEvent("health-profile", "OK", `deleted ${userId}`);
+      };
+
+      const updateWall = (data) => {
+        const weather = data?.environment?.weather || {};
+        qs("wallCity").textContent = data?.entities?.location?.name || "上海";
+        qs("wallTime").textContent = (data?.environment?.time || "2026-03-16T06:50:00+08:00").slice(0, 16).replace("T", " ");
+        qs("wallStatus").textContent = weather.status || "小雨";
+        qs("wallTemp").textContent = `${weather.feelsLike ?? 10.8}℃`;
+        qs("wallAqi").textContent = weather.aqi ?? 68;
+        qs("wallRainProb").textContent = `${Math.round((weather.precipitation ?? 1.2) * 50)}%`;
+        qs("wallWind").textContent = weather.windPower || "4级";
+        qs("wallRainText").textContent = (weather.precipitation ?? 1.2) > 1 ? "短时阵雨" : "降水较弱";
+        qs("wallWindText").textContent = weather.windDirection || "东风";
+        qs("wallRisk").textContent = data?.decision?.riskLevel === "high" ? "高" : data?.decision?.riskLevel === "low" ? "低" : "中等";
+        qs("wallHealth").textContent = data?.healthAlerts?.length ? "健康提醒" : "无特别";
+        qs("wallMode").textContent = state.useMock ? "Mock" : state.mergeMock ? "Hybrid" : "Auto";
+        updateTicker(data);
+        updateGauge(weather.aqi ?? 68);
+      };
+
+      const callStocks = async (forceMock = false) => {
+        const btn = qs(forceMock ? "mockStocksBtn" : "stocksBtn");
+        setBusy(btn, true);
+        const runRequest = async () => {
+          const wall = wallInputs();
+          const region = qs("stockRegion")?.value.trim() || wall.region;
+          const signal = qs("stockSignal")?.value.trim() || wall.signal;
+          const horizon = qs("stockHorizon")?.value.trim() || "24h";
+          const params = new URLSearchParams();
+          params.set("region", region);
+          params.set("signal", signal);
+          params.set("horizon", horizon);
+          const response = await fetch(`/api/v1/stocks/impact?${params.toString()}`);
+          return await safeJson(response);
+        };
+        try {
+          const data = forceMock ? mock.stocks() : await callWithFallback(runRequest, mock.stocks);
+          qs("stocksResult").textContent = pretty(data);
+          toastWall({ service: "stocks", data });
+          const bar = qs("stocksBar");
+          if (bar) {
+            const confidence = Math.round((data.confidence || 0.5) * 100);
+            bar.style.width = `${confidence}%`;
+          }
+          const bias = qs("stocksBias");
+          if (bias) {
+            const label = data.marketBias === "positive" ? "偏多" : data.marketBias === "negative" ? "偏空" : "谨慎";
+            bias.textContent = `${label} · 置信度 ${(data.confidence || 0.5) * 100}%`;
+          }
+          const list = qs("stocksList");
+          if (list) {
+            list.innerHTML = "";
+            (data.sectors || []).forEach((item) => {
+              const li = document.createElement("li");
+              li.textContent = `${item.name}：${item.impact === "positive" ? "利好" : "承压"}（${item.reason}）`;
+              list.appendChild(li);
+            });
+          }
+          updateTicker({ marketSignal: `行业信号：${data.sectors?.[0]?.name || "物流"} ${data.sectors?.[0]?.impact === "positive" ? "回暖" : "承压"}` });
+          addCapEvent("stocks", "OK", `${data.marketBias || "--"} ${(data.confidence || 0) * 100}%`);
+        } catch (err) {
+          qs("stocksResult").textContent = String(err);
+          toastWall({ service: "stocks", error: String(err) });
+          addCapEvent("stocks", "ERROR", String(err));
+        } finally {
+          setBusy(btn, false);
+        }
+      };
+
+      const syncWallToForms = () => {
+        const wall = wallInputs();
+        if (qs("queryText")) qs("queryText").value = wall.query;
+        if (qs("querySession")) qs("querySession").value = wall.sessionId;
+        if (qs("queryCity")) qs("queryCity").value = wall.city;
+        if (qs("queryAdcode")) qs("queryAdcode").value = wall.adcode;
+        if (qs("queryTime")) qs("queryTime").value = wall.time;
+        if (qs("weatherCity")) qs("weatherCity").value = wall.city;
+        if (qs("weatherAdcode")) qs("weatherAdcode").value = wall.adcode;
+        if (qs("memorySession")) qs("memorySession").value = wall.sessionId;
+        if (qs("forecastLat")) qs("forecastLat").value = wall.lat;
+        if (qs("forecastLon")) qs("forecastLon").value = wall.lon;
+        if (qs("aqiLat")) qs("aqiLat").value = wall.lat;
+        if (qs("aqiLon")) qs("aqiLon").value = wall.lon;
+        if (qs("taskType")) qs("taskType").value = wall.taskType;
+        if (qs("taskTime")) qs("taskTime").value = wall.taskTime;
+        if (qs("ragQuery")) qs("ragQuery").value = wall.ragQuery;
+        if (qs("stockRegion")) qs("stockRegion").value = wall.region;
+        if (qs("stockSignal")) qs("stockSignal").value = wall.signal;
+        if (qs("healthUser")) qs("healthUser").value = wall.userId;
+        if (qs("healthNote")) qs("healthNote").value = wall.healthNote;
+      };
+
+      const runWallAll = async () => {
+        const btn = qs("wallRunAllBtn");
+        if (btn) setBusy(btn, true);
+        try {
+          syncWallToForms();
+          await callWeather(false);
+          await callForecast(false);
+          await callAqi(false);
+          await runHealthProfileUpsert();
+          await runHealthProfileLoad();
+          await runHealthAlerts();
+          await callQuery(false);
+          await callMemory("fetch", false);
+          await callTask(false);
+          await callRag(false);
+          await callStocks(false);
+          addCapEvent("pipeline", "DONE", "全链路已完成");
+          setServiceTag("api", "在线", true);
+          setServiceTag("llm", "在线", true);
+        } catch (err) {
+          addCapEvent("pipeline", "ERROR", String(err));
+          toastWall({ service: "pipeline", error: String(err) });
+          setServiceTag("api", "异常", false);
+        } finally {
+          if (btn) setBusy(btn, false);
+        }
+      };
+
+      const runWallQuickAction = async () => {
+        const action = qs("wallQuickAction")?.value || "query";
+        syncWallToForms();
+        if (action === "query") return callQuery(false);
+        if (action === "weather") return callWeather(false);
+        if (action === "forecast") return callForecast(false);
+        if (action === "aqi") return callAqi(false);
+        if (action === "health-profile") return runHealthProfileUpsert();
+        if (action === "health-load") return runHealthProfileLoad();
+        if (action === "health-delete") return runHealthProfileDelete();
+        if (action === "health-alerts") return runHealthAlerts();
+        if (action === "profile-analysis") return runProfileAnalysis();
+        if (action === "memory") return callMemory("fetch", false);
+        if (action === "memory-clear") return callMemory("clear", false);
+        if (action === "task") return callTask(false);
+        if (action === "rag") return callRag(false);
+        if (action === "stocks") return callStocks(false);
+      };
+
+      const mountOpsPane = () => {
+        const boards = $$(".wall .capability-board");
+        const controlMount = qs("opsControlMount");
+        const timelineMount = qs("opsTimelineMount");
+        if (!controlMount || !timelineMount) return;
+        if (boards[0] && !controlMount.firstElementChild) controlMount.appendChild(boards[0]);
+        if (boards[1] && !timelineMount.firstElementChild) timelineMount.appendChild(boards[1]);
+      };
+
+      const applyFormation = (mode) => {
+        const presetMap = {
+          commute: {
+            query: "明早 7 点在上海骑行通勤，要带雨衣吗？",
+            rag: "雨天通勤 骑行 安全 建议",
+            signal: "降雨+湿冷+通勤压力",
+            task: "commute",
+          },
+          health: {
+            query: "今天湿冷天气对我的关节和呼吸道有什么提醒？",
+            rag: "湿冷天气 关节 呼吸道 健康 建议",
+            signal: "湿冷+空气波动+健康敏感",
+            task: "health",
+          },
+          travel: {
+            query: "今天上午在上海外出，是否适合步行和地铁换乘？",
+            rag: "降雨 出行 步行 地铁 风险 建议",
+            signal: "降雨+风力+路面湿滑",
+            task: "travel",
+          },
+          invest: {
+            query: "当前天气和空气质量变化，对本地消费和物流有什么影响？",
+            rag: "天气 物流 消费 行业 影响",
+            signal: "天气扰动+城市活跃变化+物流压力",
+            task: "sport",
+          },
+        };
+        const preset = presetMap[mode] || presetMap.commute;
+        if (qs("wallQueryText")) qs("wallQueryText").value = preset.query;
+        if (qs("wallRagQuery")) qs("wallRagQuery").value = preset.rag;
+        if (qs("wallSignal")) qs("wallSignal").value = preset.signal;
+        if (qs("wallTaskType")) qs("wallTaskType").value = preset.task;
+        syncWallToForms();
+      };
+
+      const bindFormationModes = () => {
+        const buttons = $$(".formation-btn");
+        if (!buttons.length) return;
+        buttons.forEach((button) => {
+          button.addEventListener("click", () => {
+            buttons.forEach((item) => item.classList.remove("is-active"));
+            button.classList.add("is-active");
+            applyFormation(button.dataset.formation || "commute");
+          });
+        });
+        applyFormation("commute");
+      };
+
+      const init = () => {
+        bindPills("scenarioPills");
+        bindPills("conditionPills");
+        renderScenes();
+        updateHealthSummary(null, []);
+        updateWall(mock.query());
+        mountOpsPane();
+        bindFormationModes();
+        if (!speechApi.supportedAsr && !speechApi.supportedTts) {
+          setVoiceStatus("当前浏览器不支持 ASR/TTS");
+        } else if (!speechApi.supportedAsr) {
+          setVoiceStatus("仅支持语音播报，不支持语音识别");
+        } else if (!speechApi.supportedTts) {
+          setVoiceStatus("仅支持语音识别，不支持语音播报");
+        }
+        setServiceTag("api", "待检测", true);
+        setServiceTag("llm", "待检测", true);
+        syncWallToForms();
+        const first = qs("wall");
+        if (first) first.classList.add("is-active");
+      };
+
+      qs("queryBtn").dataset.label = "发送决策";
+      qs("mockQueryBtn").dataset.label = "示例响应";
+      qs("weatherBtn").dataset.label = "查询";
+      qs("mockWeatherBtn").dataset.label = "模拟天气";
+      qs("memoryFetchBtn").dataset.label = "读取记忆";
+      qs("memoryClearBtn").dataset.label = "清理记忆";
+      qs("forecastBtn").dataset.label = "获取预报";
+      qs("mockForecastBtn").dataset.label = "模拟预报";
+      qs("aqiBtn").dataset.label = "获取 AQI";
+      qs("mockAqiBtn").dataset.label = "模拟 AQI";
+      qs("taskBtn").dataset.label = "创建任务";
+      qs("mockTaskBtn").dataset.label = "模拟任务";
+      qs("ragBtn").dataset.label = "获取证据";
+      qs("mockRagBtn").dataset.label = "模拟证据";
+      qs("saveProfileBtn").dataset.label = "保存档案";
+      qs("analyzeProfileBtn").dataset.label = "分析画像";
+      qs("clearProfileBtn").dataset.label = "删除档案";
+      qs("stocksBtn").dataset.label = "生成分析";
+      qs("mockStocksBtn").dataset.label = "模拟分析";
+
+      qs("voiceStartBtn").dataset.label = "语音输入";
+      qs("voiceStopBtn").dataset.label = "停止录音";
+      qs("voiceSpeakBtn").dataset.label = "播报结果";
+      qs("wallVoiceStartBtn").dataset.label = "语音输入";
+      qs("wallVoiceStopBtn").dataset.label = "停止录音";
+      qs("wallVoiceSpeakBtn").dataset.label = "播报结果";
+      qs("queryBtn").addEventListener("click", () => callQuery(false));
+      qs("mockQueryBtn").addEventListener("click", () => callQuery(true));
+      qs("voiceStartBtn").addEventListener("click", startVoiceInput);
+      qs("voiceStopBtn").addEventListener("click", stopVoiceInput);
+      qs("voiceSpeakBtn").addEventListener("click", () => {
+        if (speechApi.lastDecisionText) {
+          speakText(speechApi.lastDecisionText);
+        } else {
+          setVoiceStatus("暂无可播报结果，请先发起一次决策");
+        }
+      });
+      qs("wallVoiceStartBtn").addEventListener("click", startVoiceInput);
+      qs("wallVoiceStopBtn").addEventListener("click", stopVoiceInput);
+      qs("wallVoiceSpeakBtn").addEventListener("click", () => {
+        if (speechApi.lastDecisionText) {
+          speakText(speechApi.lastDecisionText);
+        } else {
+          setVoiceStatus("暂无可播报结果，请先发起一次决策");
+        }
+      });
+      qs("weatherBtn").addEventListener("click", () => callWeather(false));
+      qs("mockWeatherBtn").addEventListener("click", () => callWeather(true));
+      qs("memoryFetchBtn").addEventListener("click", () => callMemory("fetch", false));
+      qs("memoryClearBtn").addEventListener("click", () => callMemory("clear", false));
+      qs("forecastBtn").addEventListener("click", () => callForecast(false));
+      qs("mockForecastBtn").addEventListener("click", () => callForecast(true));
+      qs("aqiBtn").addEventListener("click", () => callAqi(false));
+      qs("mockAqiBtn").addEventListener("click", () => callAqi(true));
+      qs("taskBtn").addEventListener("click", () => callTask(false));
+      qs("mockTaskBtn").addEventListener("click", () => callTask(true));
+      qs("ragBtn").addEventListener("click", () => callRag(false));
+      qs("mockRagBtn").addEventListener("click", () => callRag(true));
+      qs("saveProfileBtn").addEventListener("click", saveProfile);
+      qs("analyzeProfileBtn").addEventListener("click", async () => {
+        try {
+          await runProfileAnalysis();
+        } catch (err) {
+          addCapEvent("profile-analysis", "ERROR", String(err));
+          toastWall({ service: "profile-analysis", error: String(err) });
+        }
+      });
+      qs("clearProfileBtn").addEventListener("click", clearProfile);
+      qs("stocksBtn").addEventListener("click", () => callStocks(false));
+      qs("mockStocksBtn").addEventListener("click", () => callStocks(true));
+
+      qs("wallRunAllBtn").dataset.label = "全链路执行";
+      qs("wallQuickRunBtn").dataset.label = "执行所选";
+
+      qs("wallRunAllBtn").addEventListener("click", runWallAll);
+      qs("wallQuickRunBtn").addEventListener("click", async () => {
+        try {
+          await runWallQuickAction();
+        } catch (err) {
+          addCapEvent("wall-quick-action", "ERROR", String(err));
+          toastWall({ service: "wall-quick-action", error: String(err) });
+        }
+      });
+
+      // Sidebar was removed by design; sections are now managed inline.
+
+      const animatePulse = () => {
+        const pulse = qs("wallPulse");
+        if (!pulse) return;
+        let value = 78;
+        setInterval(() => {
+          value += Math.random() > 0.5 ? 1 : -1;
+          value = Math.max(60, Math.min(92, value));
+          pulse.textContent = `${value}%`;
+        }, 1800);
+      };
+
+      animatePulse();
+
+      const drawLineChart = (canvasId, points, color) => {
+        const canvas = qs(canvasId);
+        if (!canvas) return;
+        const ctx = canvas.getContext("2d");
+        const w = canvas.width;
+        const h = canvas.height;
+        ctx.clearRect(0, 0, w, h);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        points.forEach((p, idx) => {
+          const x = (w / (points.length - 1)) * idx;
+          const y = h - p * h;
+          if (idx === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+        ctx.fillStyle = color;
+        points.forEach((p, idx) => {
+          const x = (w / (points.length - 1)) * idx;
+          const y = h - p * h;
+          ctx.beginPath();
+          ctx.arc(x, y, 2.5, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      };
+
+      const updateGauge = (value) => {
+        const arc = qs("aqiGaugeArc");
+        const label = qs("aqiGaugeValue");
+        if (!arc || !label) return;
+        const clamped = Math.max(0, Math.min(200, value));
+        const ratio = clamped / 200;
+        const circumference = 2 * Math.PI * 46;
+        const dash = circumference * ratio;
+        arc.setAttribute("stroke-dasharray", `${dash} ${circumference - dash}`);
+        label.textContent = clamped;
+      };
+
+      const animateCharts = () => {
+        const rain = [0.2, 0.35, 0.6, 0.55, 0.4, 0.3, 0.2];
+        const traffic = [0.7, 0.65, 0.6, 0.5, 0.52, 0.48, 0.45];
+        drawLineChart("rainChart", rain, "rgba(82,196,26,0.9)");
+        drawLineChart("trafficChart", traffic, "rgba(82,196,26,0.9)");
+        setInterval(() => {
+          rain.push(Math.max(0.1, Math.min(0.9, rain.shift() + (Math.random() - 0.5) * 0.2)));
+          traffic.push(Math.max(0.2, Math.min(0.9, traffic.shift() + (Math.random() - 0.5) * 0.2)));
+          drawLineChart("rainChart", rain, "rgba(82,196,26,0.9)");
+          drawLineChart("trafficChart", traffic, "rgba(82,196,26,0.9)");
+        }, 2500);
+      };
+
+      animateCharts();
+
+      // 高级交互功能
+      
+      // 1. 卡片涟漪效果
+      const addRippleEffect = () => {
+        document.querySelectorAll(".card, .wall-card, .wall-map").forEach(el => {
+          el.addEventListener("click", (e) => {
+            const rect = el.getBoundingClientRect();
+            const ripple = document.createElement("span");
+            const size = Math.max(rect.width, rect.height);
+            const x = e.clientX - rect.left - size / 2;
+            const y = e.clientY - rect.top - size / 2;
+            
+            ripple.style.cssText = `
+              position: absolute;
+              width: ${size}px;
+              height: ${size}px;
+              background: radial-gradient(circle, rgba(82,196,26,0.5), transparent);
+              border-radius: 50%;
+              pointer-events: none;
+              left: ${x}px;
+              top: ${y}px;
+              animation: ripple-out 0.6s ease-out;
+            `;
+            el.style.position = "relative";
+            el.appendChild(ripple);
+            setTimeout(() => ripple.remove(), 600);
+          });
+        });
+      };
+
+      // 2. 数据加载骨架屏
+      const showSkeleton = (elementId, rows = 3) => {
+        const el = qs(elementId);
+        if (!el) return;
+        el.innerHTML = Array(rows).fill().map(() => `
+          <div class="skeleton" style="height: 16px; margin: 8px 0; border-radius: 4px;"></div>
+        `).join("");
+      };
+
+      // 3. 平滑数据更新
+      const smoothUpdate = (element, newValue, duration = 600) => {
+        if (!element) return;
+        const oldValue = parseFloat(element.textContent) || 0;
+        const start = Date.now();
+        const diff = newValue - oldValue;
+        
+        const animate = () => {
+          const elapsed = Date.now() - start;
+          const progress = Math.min(elapsed / duration, 1);
+          const easing = progress < 0.5 ? 2 * progress * progress : -1 + 4 * progress - 2 * progress * progress;
+          const current = oldValue + diff * easing;
+          element.textContent = current.toFixed(1);
+          if (progress < 1) requestAnimationFrame(animate);
+        };
+        animate();
+      };
+
+      // 4. 语音波形可视化
+      const createWaveform = (containerId, height = 40) => {
+        const container = qs(containerId);
+        if (!container) return;
+        
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute("width", "100%");
+        svg.setAttribute("height", height);
+        
+        const bars = 30;
+        for (let i = 0; i < bars; i++) {
+          const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+          const x = (i / bars) * 100;
+          const randomHeight = Math.random() * 80 + 20;
+          
+          rect.setAttribute("x", `${x}%`);
+          rect.setAttribute("y", `${50 - randomHeight / 2}%`);
+          rect.setAttribute("width", `${(100 / bars) * 0.7}%`);
+          rect.setAttribute("height", `${randomHeight}%`);
+          rect.setAttribute("fill", "rgba(82,196,26,0.7)");
+          rect.setAttribute("rx", "2");
+          rect.style.animation = `float ${0.5 + Math.random() * 0.5}s ease-in-out ${i * 0.05}s infinite`;
+          
+          svg.appendChild(rect);
+        }
+        container.appendChild(svg);
+      };
+
+      // 5. 页面过渡效果
+      const addPageTransition = () => {
+        const steps = document.querySelectorAll(".story-step");
+        const nav = document.querySelectorAll("[data-step]");
+        
+        nav.forEach(btn => {
+          btn.addEventListener("click", () => {
+            const stepId = btn.dataset.step;
+            steps.forEach(step => {
+              step.classList.remove("is-active");
+              step.style.animation = "none";
+            });
+            setTimeout(() => {
+              const target = qs(stepId);
+              if (target) {
+                target.classList.add("is-active");
+                target.style.animation = "rise 0.4s ease";
+              }
+            }, 10);
+          });
+        });
+      };
+
+      // 6. 悬停发光效果
+      const addGlowEffect = () => {
+        document.querySelectorAll(".wall-card, .card").forEach(el => {
+          el.addEventListener("mouseenter", () => {
+            el.style.animation = "pulse-glow 1s ease-in-out";
+          });
+          el.addEventListener("mouseleave", () => {
+            el.style.animation = "none";
+          });
+        });
+      };
+
+      // 添加涟漪效果CSS
+      const style = document.createElement("style");
+      style.textContent = `
+        @keyframes ripple-out {
+          from {
+            transform: scale(0);
+            opacity: 1;
+          }
+          to {
+            transform: scale(4);
+            opacity: 0;
+          }
+        }
+      `;
+      document.head.appendChild(style);
+
+      // 初始化所有高级交互
+      addRippleEffect();
+      addPageTransition();
+      addGlowEffect();
+
+      init();
+    </script>
+  </body>
+</html>

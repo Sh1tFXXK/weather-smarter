@@ -1,2 +1,1 @@
-__all__ = []
-
+"""Backend package entry point for Weather Smarter."""

@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+.env/
+bin/
+include/
+lib/
+share/
+pyvenv.cfg
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Models (should be LFS, but ignore local downloads if not careful)
+# models/  <-- Don't ignore models if they are tracked by LFS

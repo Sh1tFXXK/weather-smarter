@@ -7,8 +7,28 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, Security
 from fastapi.security import APIKeyHeader, HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, Field, ConfigDict
 
-from backend.agent.decision_rules import build_forecast_summary, make_decision
-from backend.data.uapis_weather import UapisError, fetch_weather
+from backend.agent.decision_rules import build_forecast_summary, make_intent_decision
+from backend.agent.environment_fusion import build_environment_snapshot
+from backend.agent.health_profile_store import get_health_profile_store
+from backend.agent.health_rules import evaluate_health_alerts
+from backend.agent.profile_analyzer import analyze_user_profile
+from backend.agent.llm_router import enrich_decision, llm_status
+from backend.agent.memory_store import get_memory_store
+from backend.data.mock_data import (
+    mock_aqi,
+    mock_forecast,
+    infer_health_conditions,
+    mock_health_conditions,
+    mock_health_profile,
+    mock_rag,
+    mock_stocks,
+    mock_task,
+    mock_weather,
+)
+from backend.nlp.intent import get_intent_classifier
+from backend.nlp.slots import extract_slots
+from backend.rag.retriever import build_query, get_retriever
+from backend.tts_asr import SpeechServiceError, get_speech_service
 
 router = APIRouter(prefix="/api/v1")
 
@@ -125,11 +145,138 @@ class QueryRequest(BaseModel):
     )
 
 
+class NLUResult(BaseModel):
+    intent: str
+    slots: Dict[str, Optional[str]]
+
+
+class MemoryItem(BaseModel):
+    role: str
+    content: str
+    metadata: Optional[Dict[str, Any]] = None
+    timestamp: str
+
+
+class EnvironmentSnapshot(BaseModel):
+    time: str
+    timeBucket: str
+    weather: Dict[str, Any]
+    comfortIndex: Optional[int] = None
+    riskFlags: List[str]
+    sources: List[str]
+
+
+class EvidenceItem(BaseModel):
+    id: str
+    title: str
+    content: str
+    tags: List[str] = Field(default_factory=list)
+    domain: Optional[str] = None
+    score: Optional[float] = None
+
+
+class HealthProfileRequest(BaseModel):
+    user_id: str
+    conditions: List[str] = Field(default_factory=list)
+    note: Optional[str] = None
+    consent: bool = True
+    sensitivity: Optional[Dict[str, Any]] = None
+
+
+class HealthProfileResponse(BaseModel):
+    user_id: str
+    conditions: List[str]
+    note: Optional[str] = None
+    consent: bool = True
+    sensitivity: Optional[Dict[str, Any]] = None
+    created_at: Optional[str] = None
+    updated_at: str
+    source: str = "mock"
+
+
+class HealthAlertsResponse(BaseModel):
+    user_id: str
+    alerts: List[Dict[str, Any]]
+    riskLevel: str
+
+
+class ProfileAnalysisResponse(BaseModel):
+    user_id: str
+    persona: str
+    tags: List[str]
+    top_interest: str
+    risk_preference: str
+    execution_preference: str
+    adoption_tendency: str
+    condition_count: int
+    memory_count: int
+    profile_completeness: str
+    summary: str
+    scenario_preferences: List[Dict[str, Any]]
+    strategy_recommendations: List[str]
+    evidence: Dict[str, Any]
+
+
+class StocksImpactResponse(BaseModel):
+    region: str
+    updatedAt: str
+    weatherSignal: str
+    marketBias: str
+    confidence: float
+    sectors: List[Dict[str, Any]]
+    drivers: List[str]
+    disclaimer: str
+    source: str = "mock"
+
+
+class RagResponse(BaseModel):
+    query: str
+    items: List[EvidenceItem]
+
+
+class ASRRequest(BaseModel):
+    audioBase64: str = Field(..., description="Base64 encoded audio bytes")
+    filename: str = Field(default="speech.webm")
+    contentType: str = Field(default="audio/webm")
+    language: Optional[str] = Field(default="zh", description="Language hint, e.g. zh/en")
+    prompt: Optional[str] = Field(default=None, description="Optional transcription hint")
+
+
+class ASRResponse(BaseModel):
+    text: str
+    language: Optional[str] = None
+    durationMs: Optional[int] = None
+    provider: str
+    model: str
+
+
+class TTSRequest(BaseModel):
+    text: str = Field(..., description="Text to synthesize")
+    voice: str = Field(default="alloy")
+    format: str = Field(default="mp3", description="mp3|wav|opus|aac|flac")
+    instructions: Optional[str] = Field(default=None, description="Voice style hint")
+
+
+class TTSResponse(BaseModel):
+    audioBase64: str
+    mimeType: str
+    provider: str
+    model: str
+    voice: str
+
+
 class QueryResponse(BaseModel):
     intent: Optional[str] = None
     entities: Entities
     forecastSummary: Optional[str] = None
     decision: Decision
+    nlu: Optional[NLUResult] = None
+    environment: Optional[EnvironmentSnapshot] = None
+    evidence: Optional[List[EvidenceItem]] = None
+    memory: Optional[List[MemoryItem]] = None
+    healthAlerts: Optional[List[Dict[str, Any]]] = None
+    healthRiskLevel: Optional[str] = None
+    profileSummary: Optional[ProfileAnalysisResponse] = None
     followUps: List[str] = Field(default_factory=list)
     sources: List[str] = Field(default_factory=list)
     traceId: Optional[str] = None
@@ -148,31 +295,30 @@ async def post_query(
     request: Request,
     _auth: Optional[str] = Depends(get_auth),
 ) -> QueryResponse:
-    city = payload.city or (payload.location.name if payload.location else None)
+    # Always use mock data for this implementation.
+    classifier = get_intent_classifier()
+    intent = classifier.predict(payload.query)
+    slots = extract_slots(payload.query)
+    if payload.scenario:
+        intent = payload.scenario
+
+    city = payload.city or slots.get("city") or (payload.location.name if payload.location else None)
     adcode = payload.adcode
     locale = (payload.locale or "zh-CN").lower()
     lang = payload.lang or ("en" if locale.startswith("en") else "zh")
-    client_ip = request.client.host if request.client else None
-
-    try:
-        weather = await fetch_weather(
-            city=city,
-            adcode=adcode,
-            lang=lang,
-            extended=True,
-            forecast=False,
-            hourly=False,
-            minutely=False,
-            indices=False,
-            client_ip=client_ip,
-        )
-    except UapisError as exc:
-        raise HTTPException(status_code=exc.status_code, detail=exc.payload)
+    weather = mock_weather(city=city, adcode=adcode, lang=lang, extended=True)
 
     weather_city = weather.get("city")
     weather_province = weather.get("province")
-    name_parts = [p for p in [weather_province, weather_city] if p]
-    weather_name = "".join(name_parts) if name_parts else city
+    if weather_city and weather_province:
+        if weather_city in weather_province:
+            weather_name = weather_province
+        elif weather_province in weather_city:
+            weather_name = weather_city
+        else:
+            weather_name = f"{weather_province}{weather_city}"
+    else:
+        weather_name = weather_city or weather_province or city
 
     if payload.location:
         loc = Location(
@@ -183,12 +329,141 @@ async def post_query(
     else:
         loc = Location(name=weather_name, lat=None, lon=None)
 
-    advice, risk_level, reasons, actions = make_decision(weather)
+    if intent == "greeting":
+        advice = "你好！可以问我天气、出行、穿衣、运动建议。"
+        risk_level = "low"
+        reasons = []
+        actions = []
+    else:
+        advice, risk_level, reasons, actions = make_intent_decision(intent, weather, slots)
+    base_decision = {
+        "advice": advice,
+        "riskLevel": risk_level,
+        "reasons": reasons,
+        "actions": actions,
+    }
     forecast_summary = build_forecast_summary(weather)
+    environment = EnvironmentSnapshot(
+        **build_environment_snapshot(weather, event_time=payload.time)
+    )
+    rag_query = build_query(
+        query=payload.query,
+        intent=intent,
+        slots=slots,
+        environment=environment.model_dump(),
+    )
+    rag_items = get_retriever().retrieve(rag_query)
+    if not rag_items:
+        rag_items = mock_rag(rag_query)
+    evidence = [EvidenceItem(**item) for item in rag_items]
+
+    memory_store = None
+    memory_history: Optional[List[Dict[str, Any]]] = None
+    if payload.sessionId:
+        memory_store = get_memory_store()
+        memory_history = memory_store.list_messages(session_id=payload.sessionId, limit=6)
+
+    llm_ok, llm_reason = llm_status()
+    if not llm_ok:
+        raise HTTPException(
+            status_code=503,
+            detail={"code": "LLM_NOT_CONFIGURED", "message": llm_reason},
+        )
+    llm_decision = await enrich_decision(
+        intent=intent,
+        query=payload.query,
+        locale=payload.locale,
+        weather=weather,
+        environment=environment.model_dump(),
+        base_decision=base_decision,
+        memory=memory_history,
+        rag=rag_items,
+    )
+    if not llm_decision:
+        raise HTTPException(
+            status_code=502,
+            detail={"code": "LLM_FAILED", "message": "LLM did not return valid decision"},
+        )
+    advice = llm_decision["advice"]
+    risk_level = llm_decision["riskLevel"]
+    reasons = llm_decision.get("reasons", [])
+    actions = llm_decision.get("actions", [])
+
+    memory_preview: Optional[List[MemoryItem]] = None
+    profile_summary: Optional[ProfileAnalysisResponse] = None
+    if payload.sessionId:
+        if memory_store is None:
+            memory_store = get_memory_store()
+        memory_store.add_message(
+            session_id=payload.sessionId,
+            role="user",
+            content=payload.query,
+            metadata={"intent": intent, "slots": slots},
+        )
+        assistant_text = advice if intent == "greeting" else f"{forecast_summary} {advice}".strip()
+        memory_store.add_message(
+            session_id=payload.sessionId,
+            role="assistant",
+            content=assistant_text,
+            metadata={
+                "decision": {
+                    "advice": advice,
+                    "riskLevel": risk_level,
+                    "reasons": reasons,
+                    "actions": actions,
+                },
+                "intent": intent,
+                "scenario": payload.scenario or intent,
+                "user_preference_signals": {
+                    "actionCount": len(actions),
+                    "riskLevel": risk_level,
+                    "hasEvidence": bool(evidence),
+                    "hasFollowUpRecommendation": bool(actions),
+                },
+                "environment": environment.model_dump(),
+                "evidence": [item.model_dump() for item in evidence],
+            },
+        )
+        memory_preview = [
+            MemoryItem(**item)
+            for item in memory_store.list_messages(session_id=payload.sessionId, limit=6)
+        ]
+        profile = get_health_profile_store().get_profile(payload.sessionId)
+        profile_summary = ProfileAnalysisResponse(
+            **analyze_user_profile(
+                user_id=payload.sessionId,
+                health_profile=profile,
+                memory=memory_store.list_messages(session_id=payload.sessionId, limit=12),
+            )
+        )
+
+    health_alerts: Optional[List[Dict[str, Any]]] = None
+    health_risk_level: Optional[str] = None
+    if intent != "greeting":
+        user_id = payload.sessionId or (payload.location.name if payload.location else None) or "guest"
+        profile_store = get_health_profile_store()
+        profile = profile_store.get_profile(user_id)
+        if profile:
+            conditions = profile.get("conditions", [])
+            sensitivity = profile.get("sensitivity", {})
+        else:
+            inferred = infer_health_conditions(payload.query)
+            conditions = inferred or mock_health_conditions(user_id)
+            sensitivity = {}
+        health_alerts = evaluate_health_alerts(
+            conditions=conditions,
+            weather=weather,
+            sensitivity=sensitivity,
+        )
+        health_risk_level = (
+            "high"
+            if any(alert.get("riskLevel") == "high" for alert in health_alerts)
+            else "medium" if health_alerts else "low"
+        )
 
     return QueryResponse(
-        intent=payload.scenario or "commute",
-        entities=Entities(time=payload.time, mode=None, location=loc),
+        intent=intent,
+        entities=Entities(time=payload.time, mode=slots.get("activity"), location=loc),
         forecastSummary=forecast_summary,
         decision=Decision(
             advice=advice,
@@ -196,10 +471,236 @@ async def post_query(
             reasons=reasons,
             actions=actions,
         ),
+        nlu=NLUResult(intent=intent, slots=slots),
+        environment=environment,
+        evidence=evidence,
+        memory=memory_preview,
+        healthAlerts=health_alerts,
+        healthRiskLevel=health_risk_level,
+        profileSummary=profile_summary,
         followUps=[],
-        sources=["uapis:misc/weather"],
+        sources=["mock:weather", "mock:rag"],
         traceId=None,
     )
+
+
+@router.get(
+    "/memory/{session_id}",
+    tags=["Memory"],
+    response_model=List[MemoryItem],
+    responses=DEFAULT_ERROR_RESPONSES,
+    summary="获取会话记忆",
+)
+def get_memory(session_id: str, limit: int = Query(20, ge=1, le=200)) -> List[MemoryItem]:
+    memory_store = get_memory_store()
+    return [
+        MemoryItem(**item)
+        for item in memory_store.list_messages(session_id=session_id, limit=limit)
+    ]
+
+
+@router.delete(
+    "/memory/{session_id}",
+    tags=["Memory"],
+    responses=DEFAULT_ERROR_RESPONSES,
+    summary="清理会话记忆",
+)
+def clear_memory(session_id: str) -> Dict[str, str]:
+    memory_store = get_memory_store()
+    memory_store.clear_session(session_id)
+    return {"status": "cleared", "sessionId": session_id}
+
+
+# -----------------------------
+# Health Profile (Mock)
+# -----------------------------
+@router.post(
+    "/health/profile",
+    tags=["Health"],
+    response_model=HealthProfileResponse,
+    responses=DEFAULT_ERROR_RESPONSES,
+    summary="创建/更新健康档案（模拟）",
+)
+def upsert_health_profile(payload: HealthProfileRequest) -> HealthProfileResponse:
+    store = get_health_profile_store()
+    profile = store.upsert_profile(
+        user_id=payload.user_id,
+        conditions=payload.conditions,
+        note=payload.note,
+        consent=payload.consent,
+        sensitivity=payload.sensitivity,
+    )
+    return HealthProfileResponse(**profile)
+
+
+@router.get(
+    "/health/profile/{user_id}",
+    tags=["Health"],
+    response_model=HealthProfileResponse,
+    responses=DEFAULT_ERROR_RESPONSES,
+    summary="获取健康档案（模拟）",
+)
+def get_health_profile(user_id: str) -> HealthProfileResponse:
+    store = get_health_profile_store()
+    data = store.get_profile(user_id)
+    if not data:
+        data = mock_health_profile(user_id, mock_health_conditions(user_id), None, True)
+    return HealthProfileResponse(**data)
+
+
+@router.delete(
+    "/health/profile/{user_id}",
+    tags=["Health"],
+    responses=DEFAULT_ERROR_RESPONSES,
+    summary="删除健康档案（模拟）",
+)
+def delete_health_profile(user_id: str) -> Dict[str, str]:
+    store = get_health_profile_store()
+    existed = store.delete_profile(user_id)
+    return {"status": "deleted" if existed else "missing", "user_id": user_id}
+
+
+@router.get(
+    "/health/alerts/{user_id}",
+    tags=["Health"],
+    response_model=HealthAlertsResponse,
+    responses=DEFAULT_ERROR_RESPONSES,
+    summary="获取健康提醒（模拟）",
+)
+def get_health_alerts(user_id: str) -> HealthAlertsResponse:
+    store = get_health_profile_store()
+    profile = store.get_profile(user_id)
+    if profile:
+        conditions = profile.get("conditions", [])
+        sensitivity = profile.get("sensitivity", {})
+    else:
+        conditions = mock_health_conditions(user_id)
+        sensitivity = {}
+    alerts = evaluate_health_alerts(
+        conditions=conditions,
+        weather=mock_weather(city="上海", extended=True),
+        sensitivity=sensitivity,
+    )
+    risk_level = (
+        "high"
+        if any(alert.get("riskLevel") == "high" for alert in alerts)
+        else "medium" if alerts else "low"
+    )
+    return HealthAlertsResponse(user_id=user_id, alerts=alerts, riskLevel=risk_level)
+
+
+@router.get(
+    "/profile/analyze/{user_id}",
+    tags=["Profile"],
+    response_model=ProfileAnalysisResponse,
+    responses=DEFAULT_ERROR_RESPONSES,
+    summary="用户画像分析",
+)
+def analyze_profile(user_id: str) -> ProfileAnalysisResponse:
+    profile_store = get_health_profile_store()
+    memory_store = get_memory_store()
+    profile = profile_store.get_profile(user_id)
+    memory = memory_store.list_messages(session_id=user_id, limit=12)
+    result = analyze_user_profile(user_id=user_id, health_profile=profile, memory=memory)
+    return ProfileAnalysisResponse(**result)
+
+
+# -----------------------------
+# Stocks Impact (Mock)
+# -----------------------------
+@router.get(
+    "/stocks/impact",
+    tags=["Market"],
+    response_model=StocksImpactResponse,
+    responses=DEFAULT_ERROR_RESPONSES,
+    summary="股市影响分析（模拟）",
+)
+def get_stocks_impact(
+    region: str = Query("华东"),
+    signal: str = Query("雨天+湿冷"),
+    horizon: str = Query("24h"),
+) -> StocksImpactResponse:
+    data = mock_stocks(region, signal)
+    return StocksImpactResponse(**data)
+
+
+# -----------------------------
+# RAG Evidence (Mock)
+# -----------------------------
+@router.get(
+    "/rag/evidence",
+    tags=["RAG"],
+    response_model=RagResponse,
+    responses=DEFAULT_ERROR_RESPONSES,
+    summary="知识检索证据（模拟）",
+)
+def get_rag_evidence(query: str = Query(...)) -> RagResponse:
+    rag_items = get_retriever().retrieve(query)
+    if not rag_items:
+        rag_items = mock_rag(query)
+    items = [EvidenceItem(**item) for item in rag_items]
+    return RagResponse(query=query, items=items)
+
+
+@router.post(
+    "/asr",
+    tags=["Speech"],
+    response_model=ASRResponse,
+    responses=DEFAULT_ERROR_RESPONSES,
+    summary="语音识别（ASR）",
+)
+async def transcribe_audio(
+    payload: ASRRequest,
+    _auth: Optional[str] = Depends(get_auth),
+) -> ASRResponse:
+    service = get_speech_service()
+    try:
+        result = await service.transcribe(
+            audio_b64=payload.audioBase64,
+            filename=payload.filename,
+            content_type=payload.contentType,
+            language=payload.language,
+            prompt=payload.prompt,
+        )
+    except SpeechServiceError as exc:
+        raise HTTPException(
+            status_code=exc.status_code,
+            detail={"code": exc.code, "message": exc.message},
+        )
+    return ASRResponse(
+        text=result["text"],
+        language=result.get("language"),
+        durationMs=result.get("durationMs"),
+        provider=result["provider"],
+        model=result["model"],
+    )
+
+
+@router.post(
+    "/tts",
+    tags=["Speech"],
+    response_model=TTSResponse,
+    responses=DEFAULT_ERROR_RESPONSES,
+    summary="语音合成（TTS）",
+)
+async def synthesize_audio(
+    payload: TTSRequest,
+    _auth: Optional[str] = Depends(get_auth),
+) -> TTSResponse:
+    service = get_speech_service()
+    try:
+        result = await service.synthesize(
+            text=payload.text,
+            voice=payload.voice,
+            format_=payload.format,
+            instructions=payload.instructions,
+        )
+    except SpeechServiceError as exc:
+        raise HTTPException(
+            status_code=exc.status_code,
+            detail={"code": exc.code, "message": exc.message},
+        )
+    return TTSResponse(**result)
 
 
 # -----------------------------
@@ -224,21 +725,16 @@ async def get_misc_weather(
     indices: Optional[bool] = Query(None, description="Return life indices (zh only)"),
     _auth: Optional[str] = Depends(get_auth),
 ) -> Dict[str, Any]:
-    client_ip = request.client.host if request.client else None
-    try:
-        return await fetch_weather(
-            city=city,
-            adcode=adcode,
-            lang=lang,
-            extended=extended,
-            forecast=forecast,
-            hourly=hourly,
-            minutely=minutely,
-            indices=indices,
-            client_ip=client_ip,
-        )
-    except UapisError as exc:
-        raise HTTPException(status_code=exc.status_code, detail=exc.payload)
+    return mock_weather(
+        city=city,
+        adcode=adcode,
+        lang=lang,
+        extended=extended,
+        forecast=forecast,
+        hourly=hourly,
+        minutely=minutely,
+        indices=indices,
+    )
 
 
 # -----------------------------
@@ -288,12 +784,15 @@ async def get_forecast(
     tz: Optional[str] = Query(None),
     _auth: Optional[str] = Depends(get_auth),
 ) -> ForecastResponse:
-    now = datetime.now()
+    data = mock_forecast(lat, lon, hours, days, tz or "Asia/Shanghai")
+    current = data.get("current")
+    hourly = data.get("hourly", [])
+    daily = data.get("daily", [])
     return ForecastResponse(
-        location={"lat": lat, "lon": lon, "tz": tz or "Asia/Shanghai"},
-        current=ForecastCurrent(ts=now, temp=14.2, wind=3, aqi=55),
-        hourly=[ForecastHourly(ts=now, temp=14.5, pop=0.4)],
-        daily=[ForecastDaily(date=now.date(), tmin=11, tmax=16, uv=4)],
+        location=data.get("location", {"lat": lat, "lon": lon, "tz": tz or "Asia/Shanghai"}),
+        current=ForecastCurrent(**current) if current else None,
+        hourly=[ForecastHourly(**item) for item in hourly],
+        daily=[ForecastDaily(**item) for item in daily],
     )
 
 
@@ -307,26 +806,6 @@ class AQIResponse(BaseModel):
     primary: Optional[str] = Field(default=None, description="Primary pollutant")
 
 
-@router.get(
-    "/aqi",
-    tags=["AQI"],
-    response_model=AQIResponse,
-    responses=DEFAULT_ERROR_RESPONSES,
-    summary="空气质量（AQI）",
-)
-async def get_aqi(
-    lat: float = Query(...),
-    lon: float = Query(...),
-    units: str = Query("metric"),
-    _auth: Optional[str] = Depends(get_auth),
-) -> AQIResponse:
-    now = datetime.now()
-    return AQIResponse(location={"lat": lat, "lon": lon}, ts=now, aqi=55, primary="PM2.5")
-
-
-# -----------------------------
-# Tasks
-# -----------------------------
 class TaskCreate(BaseModel):
     type: str
     scheduled_time: datetime
@@ -352,6 +831,28 @@ class TaskCreateResponse(BaseModel):
     status: str = Field(description="scheduled|queued|failed")
 
 
+@router.get(
+    "/aqi",
+    tags=["AQI"],
+    response_model=AQIResponse,
+    responses=DEFAULT_ERROR_RESPONSES,
+    summary="空气质量（AQI）",
+)
+async def get_aqi(
+    lat: float = Query(...),
+    lon: float = Query(...),
+    units: str = Query("metric"),
+    _auth: Optional[str] = Depends(get_auth),
+) -> AQIResponse:
+    data = mock_aqi(lat, lon)
+    return AQIResponse(
+        location=data.get("location", {"lat": lat, "lon": lon}),
+        ts=datetime.fromisoformat(data["ts"]),
+        aqi=data["aqi"],
+        primary=data.get("primary"),
+    )
+
+
 @router.post(
     "/tasks",
     tags=["Tasks"],
@@ -366,4 +867,5 @@ async def create_task(
     ),
     _auth: Optional[str] = Depends(get_auth),
 ) -> TaskCreateResponse:
-    return TaskCreateResponse(task_id=1024, status="scheduled")
+    data = mock_task(payload.type, payload.scheduled_time.isoformat(), payload.priority or 5)
+    return TaskCreateResponse(task_id=data["task_id"], status=data["status"])
