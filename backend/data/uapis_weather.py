@@ -20,6 +20,10 @@ class UapisError(Exception):
         super().__init__(f"UAPIS error {status_code}")
 
 
+def weather_status_probe_enabled() -> bool:
+    return (os.getenv("WEATHER_STATUS_PROBE") or "").strip().lower() in {"1", "true", "yes", "on"}
+
+
 def _bool_param(value: Optional[bool]) -> Optional[str]:
     if value is None:
         return None
@@ -108,3 +112,26 @@ async def fetch_weather(
         status_code=503,
         payload={"code": "SERVICE_UNAVAILABLE", "message": "weather service unavailable"},
     )
+
+
+async def probe_weather_upstream() -> tuple[bool, str]:
+    if not UAPIS_BASE_URL:
+        return False, "UAPIS_BASE_URL not set"
+    try:
+        await fetch_weather(
+            city="上海",
+            adcode="310000",
+            lang="zh",
+            extended=True,
+            forecast=True,
+            hourly=True,
+            minutely=False,
+            indices=True,
+            client_ip=None,
+        )
+        return True, ""
+    except UapisError as exc:
+        message = ""
+        if isinstance(exc.payload, dict):
+            message = str(exc.payload.get("message") or exc.payload.get("code") or "")
+        return False, message or f"UAPIS error {exc.status_code}"

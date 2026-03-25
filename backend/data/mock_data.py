@@ -129,10 +129,16 @@ def mock_health_profile(
     consent: bool = True,
     sensitivity: Optional[Dict[str, Any]] = None,
     created_at: Optional[str] = None,
+    persona: Optional[str] = None,
+    sensitivity_type: Optional[str] = None,
+    priority_tags: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
     now = _now_iso()
     return {
         "user_id": user_id,
+        "persona": persona,
+        "sensitivity_type": sensitivity_type,
+        "priority_tags": priority_tags or [],
         "conditions": conditions,
         "note": note,
         "consent": consent,

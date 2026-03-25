@@ -64,6 +64,23 @@ def llm_enabled() -> bool:
 
 _LLAMA_INSTANCE: Optional[Llama] = None
 _LLAMA_LOCK = threading.Lock()
+_LLAMA_GENERATE_LOCK = threading.Lock()
+_VALID_RISK_LEVELS = {"low", "medium", "high"}
+_META_TEXT_MARKERS = (
+    "json",
+    "markdown",
+    "代码块",
+    "输出",
+    "格式",
+    "base_decision",
+    "需要确保",
+    "确认所有信息",
+    "生成最终",
+    "现在需要",
+    "根据之前的对话",
+    "用户提到",
+    "检查环境数据",
+)
 
 
 def _get_llama() -> Optional[Llama]:
@@ -96,6 +113,13 @@ def _get_llama() -> Optional[Llama]:
         return _LLAMA_INSTANCE
 
 
+def preload_llm() -> bool:
+    provider = _provider()
+    if provider != "llama_cpp":
+        return llm_enabled()
+    return _get_llama() is not None
+
+
 def _extract_text(response: Any) -> str:
     if hasattr(response, "output_text"):
         return response.output_text or ""
@@ -124,6 +148,58 @@ def _normalize_memory(memory: Optional[List[Dict[str, Any]]]) -> List[Dict[str, 
         if content:
             result.append({"role": role, "content": content})
     return result[-6:]
+
+
+def _clean_text(value: Any) -> str:
+    if not isinstance(value, str):
+        return ""
+    return value.strip().strip("`").strip()
+
+
+def _normalize_risk_level(value: Any) -> Optional[str]:
+    text = _clean_text(value).lower()
+    if not text:
+        return None
+    if text in _VALID_RISK_LEVELS:
+        return text
+    compact = text.replace(" ", "")
+    if len(compact) <= 12:
+        if "high" in compact or compact.endswith("高") or "高风险" in compact:
+            return "high"
+        if "medium" in compact or compact.endswith("中") or "中风险" in compact:
+            return "medium"
+        if "low" in compact or compact.endswith("低") or "低风险" in compact:
+            return "low"
+    return None
+
+
+def _looks_like_meta_text(text: str) -> bool:
+    cleaned = _clean_text(text)
+    if not cleaned:
+        return True
+    if cleaned in {"[", "]", "{", "}", "-", "--"}:
+        return True
+    lowered = cleaned.lower()
+    if len(cleaned) > 240:
+        return True
+    return any(marker in lowered or marker in cleaned for marker in _META_TEXT_MARKERS)
+
+
+def _sanitize_text_list(value: Any) -> List[str]:
+    if not isinstance(value, list):
+        return []
+    items: List[str] = []
+    seen: set[str] = set()
+    for raw in value:
+        text = _clean_text(raw)
+        if not text or _looks_like_meta_text(text):
+            continue
+        if text not in seen:
+            seen.add(text)
+            items.append(text)
+        if len(items) >= 6:
+            break
+    return items
 
 
 def _build_context(
@@ -176,6 +252,38 @@ def _parse_json_response(raw_text: str) -> Optional[Dict[str, Any]]:
             return None
 
 
+def _extract_decision_lines(raw_text: str) -> Optional[Dict[str, Any]]:
+    if not raw_text:
+        return None
+    advice = ""
+    risk_level = ""
+    reasons: List[str] = []
+    actions: List[str] = []
+    for line in raw_text.splitlines():
+        text = line.strip().lstrip("-").strip()
+        lower = text.lower()
+        if not advice and ("advice" in lower or "建议" in text):
+            advice = text.split(":", 1)[-1].split("：", 1)[-1].strip()
+        elif not risk_level and ("risklevel" in lower or "风险" in text):
+            risk_level = text.split(":", 1)[-1].split("：", 1)[-1].strip().lower()
+        elif "reason" in lower or "原因" in text:
+            value = text.split(":", 1)[-1].split("：", 1)[-1].strip()
+            if value:
+                reasons.append(value)
+        elif "action" in lower or "行动" in text or "建议措施" in text:
+            value = text.split(":", 1)[-1].split("：", 1)[-1].strip()
+            if value:
+                actions.append(value)
+    if advice and risk_level:
+        return {
+            "advice": advice,
+            "riskLevel": risk_level,
+            "reasons": reasons,
+            "actions": actions,
+        }
+    return None
+
+
 def _normalize_decision(
     data: Dict[str, Any], base_decision: Dict[str, Any]
 ) -> Optional[Dict[str, Any]]:
@@ -183,15 +291,31 @@ def _normalize_decision(
         return None
     if "advice" not in data or "riskLevel" not in data:
         return None
-    if not isinstance(data.get("reasons", []), list):
-        data["reasons"] = []
-    if not isinstance(data.get("actions", []), list):
-        data["actions"] = []
+
+    base_advice = _clean_text(base_decision.get("advice")) or ""
+    advice = _clean_text(data.get("advice")) or base_advice
+    if _looks_like_meta_text(advice):
+        advice = base_advice
+
+    risk_level = _normalize_risk_level(data.get("riskLevel")) or _normalize_risk_level(
+        base_decision.get("riskLevel")
+    )
+    if not risk_level:
+        return None
+
+    reasons = _sanitize_text_list(data.get("reasons"))
+    if not reasons:
+        reasons = _sanitize_text_list(base_decision.get("reasons", []))
+
+    actions = _sanitize_text_list(data.get("actions"))
+    if not actions:
+        actions = _sanitize_text_list(base_decision.get("actions", []))
+
     return {
-        "advice": data.get("advice", base_decision.get("advice")),
-        "riskLevel": data.get("riskLevel", base_decision.get("riskLevel")),
-        "reasons": data.get("reasons", base_decision.get("reasons", [])),
-        "actions": data.get("actions", base_decision.get("actions", [])),
+        "advice": advice,
+        "riskLevel": risk_level,
+        "reasons": reasons,
+        "actions": actions,
     }
 
 
@@ -490,16 +614,57 @@ async def _enrich_with_llama_cpp(
         memory=memory,
         rag=rag,
     )
+    compact_context = {
+        "query": query,
+        "intent": intent,
+        "locale": locale,
+        "weather": {
+            "city": weather.get("city"),
+            "status": weather.get("weather"),
+            "temperature": weather.get("temperature"),
+            "aqi": weather.get("aqi"),
+            "wind": weather.get("wind_power"),
+            "precipitation": weather.get("precipitation"),
+        },
+        "base_decision": base_decision,
+        "memory": _normalize_memory(memory)[-2:],
+        "rag": [
+            {
+                "title": item.get("title"),
+                "content": item.get("content"),
+            }
+            for item in (rag or [])[:2]
+        ],
+    }
 
     def _call() -> Any:
-        return llama.create_chat_completion(
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": json.dumps(context, ensure_ascii=False)},
-            ],
-            temperature=temperature,
-            max_tokens=max_tokens,
-        )
+        with _LLAMA_GENERATE_LOCK:
+            return llama.create_chat_completion(
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": json.dumps(context, ensure_ascii=False)},
+                ],
+                temperature=temperature,
+                max_tokens=max_tokens,
+            )
+
+    retry_system_prompt = (
+        "你是天气决策助手。"
+        "只输出一行 JSON，不要解释，不要 markdown。"
+        '格式固定为 {"advice":"...","riskLevel":"low|medium|high","reasons":["..."],"actions":["..."]}。'
+        "如果没有更好的改写，就保持 base_decision 的语义。"
+    )
+
+    def _retry_call() -> Any:
+        with _LLAMA_GENERATE_LOCK:
+            return llama.create_chat_completion(
+                messages=[
+                    {"role": "system", "content": retry_system_prompt},
+                    {"role": "user", "content": json.dumps(compact_context, ensure_ascii=False)},
+                ],
+                temperature=0,
+                max_tokens=min(max_tokens, 160),
+            )
 
     try:
         response = await asyncio.to_thread(_call)
@@ -513,6 +678,22 @@ async def _enrich_with_llama_cpp(
             message = choices[0].get("message", {})
             raw_text = message.get("content")
     parsed = _parse_json_response(raw_text or "")
+    if not parsed:
+        parsed = _extract_decision_lines(raw_text or "")
+    if not parsed:
+        try:
+            retry_response = await asyncio.to_thread(_retry_call)
+        except Exception:
+            retry_response = None
+        retry_text = None
+        if isinstance(retry_response, dict):
+            choices = retry_response.get("choices") or []
+            if choices:
+                message = choices[0].get("message", {})
+                retry_text = message.get("content")
+        parsed = _parse_json_response(retry_text or "")
+        if not parsed:
+            parsed = _extract_decision_lines(retry_text or "")
     if not parsed:
         return None
     return _normalize_decision(parsed, base_decision)

@@ -16,6 +16,7 @@ pyvenv.cfg
 .idea/
 .vscode/
 *.swp
+.claude/
 
 # OS
 .DS_Store
@@ -23,3 +24,20 @@ Thumbs.db
 
 # Models (should be LFS, but ignore local downloads if not careful)
 # models/  <-- Don't ignore models if they are tracked by LFS
+
+# Local runtime data
+logs/
+backend_server.log
+pip_llama_build.log
+backend/data/*.db-shm
+backend/data/*.db-wal
+backend/data/tasks.db
+frontend/out.txt
+frontend/out_head_index.html
+
+# Local build tools dropped into the embedded Python env
+.pyembed/Scripts/ccmake.exe
+.pyembed/Scripts/cmake.exe
+.pyembed/Scripts/cpack.exe
+.pyembed/Scripts/ctest.exe
+.pyembed/Scripts/ninja.exe
